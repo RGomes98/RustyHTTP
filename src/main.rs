@@ -1,7 +1,10 @@
-use std::net::TcpListener;
 use std::env;
+use std::net::TcpListener;
 
-fn get_from_env(key:&str, fallback:&str) -> String {
+mod modules;
+use modules::logger::Logger;
+
+fn get_from_env(key: &str, fallback: &str) -> String {
     return env::var(key).unwrap_or(fallback.to_string());
 }
 
