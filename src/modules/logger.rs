@@ -1,48 +1,61 @@
-use std::collections::HashMap;
-
-pub struct Logger;
-#[derive(Hash, Eq, PartialEq, Debug)]
-enum Color {
-    Red,
-    Yellow,
-    Blue,
-    Green,
+enum LogLevel {
+    DEBUG,
+    INFO,
+    WARN,
+    ERROR,
 }
 
+enum LogColor {
+    RED,
+    YELLOW,
+    BLUE,
+    GREEN,
+}
+
+pub struct Logger;
 impl Logger {
-    fn log(level: &str, message: &str) {
-        let log_entry = format!("[{}] {}\n", level, message);
+    fn get_log_color(log_color: &LogColor) -> u8 {
+        match *log_color {
+            LogColor::RED => 31,
+            LogColor::YELLOW => 33,
+            LogColor::BLUE => 34,
+            LogColor::GREEN => 32,
+        }
+    }
+
+    fn get_log_level(log_level: &LogLevel) -> &'static str {
+        match *log_level {
+            LogLevel::DEBUG => "DEBUG",
+            LogLevel::ERROR => "ERROR",
+            LogLevel::INFO => "INFO",
+            LogLevel::WARN => "WARN",
+        }
+    }
+
+    fn colorize(log_message: &str, log_color: &LogColor) -> String {
+        let ansi_code: u8 = Self::get_log_color(log_color);
+        return format!("\x1b[{}m{}\x1b[0m", ansi_code, log_message);
+    }
+
+    fn log(log_message: &str, log_level: &LogLevel, color_enum: &LogColor) -> () {
+        let colorized_level: String = Self::colorize(Self::get_log_level(log_level), color_enum);
+        let log_entry: String = format!("[{}] {}\n", colorized_level, log_message);
         println!("{}", log_entry.trim());
     }
 
-    fn debug(message: &str) -> () {
-        Self::log("DEBUG", message);
+    pub fn debug(log_message: &str) -> () {
+        Self::log(log_message, &LogLevel::DEBUG, &LogColor::GREEN);
     }
 
-    fn info(message: &str) -> () {
-        Self::log("INFO", message);
+    pub fn info(log_message: &str) -> () {
+        Self::log(log_message, &LogLevel::INFO, &LogColor::BLUE);
     }
 
-    fn warn(message: &str) -> () {
-        Self::log("WARN", message);
+    pub fn warn(log_message: &str) -> () {
+        Self::log(log_message, &LogLevel::WARN, &LogColor::YELLOW);
     }
 
-    fn error(message: &str) -> () {
-        Self::log("ERROR", &Self::colorize(message, &Color::Red));
-    }
-
-    fn colorize(message: &str, color: &Color) -> String {
-        let mut map: HashMap<Color, i32> = HashMap::from([
-            (Color::Red, 31),
-            (Color::Yellow, 33),
-            (Color::Blue, 34),
-            (Color::Green, 32),
-        ]);
-
-        return format!(
-            "\x1b[{}m{}\x1b[0m",
-            map.get(color).expect("msg").to_string(),
-            message
-        );
+    pub fn error(log_message: &str) -> () {
+        Self::log(log_message, &LogLevel::ERROR, &LogColor::RED);
     }
 }
