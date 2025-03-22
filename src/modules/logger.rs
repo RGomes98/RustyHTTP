@@ -39,7 +39,7 @@ impl Logger {
 
     fn log(log_message: &str, log_level: &LogLevel, color_enum: &LogColor) -> () {
         let colorized_level: String = Self::colorize(Self::get_log_level(log_level), color_enum);
-        let log_entry: String = format!("[{}] {}\n", colorized_level, log_message);
+        let log_entry: String = format!("[{}] {}", colorized_level, log_message);
         println!("{}", log_entry.trim());
     }
 
