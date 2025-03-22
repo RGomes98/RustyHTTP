@@ -1,7 +1,7 @@
 mod modules;
 
-use modules::env::Env;
-use modules::logger::Logger;
+use modules::config::Env;
+use modules::utils::Logger;
 use std::net::TcpListener;
 
 fn main() {

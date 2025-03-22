@@ -1,4 +1,4 @@
-use crate::modules::logger::Logger;
+use crate::modules::utils::Logger;
 use std::env;
 
 pub struct Env;
