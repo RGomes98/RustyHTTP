@@ -43,7 +43,9 @@ Before you can build and run the project, you'll need to have the Rust compiler 
 
    This should output the installed version of the Rust compiler.
 
-4. Clone the repository:
+### Clone the repository
+
+Clone the repository and navigate to the project folder:
 
 ```bash
 git clone https://github.com/RGomes98/RustyHTTP.git
