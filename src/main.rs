@@ -1,16 +1,12 @@
-use std::env;
+mod modules;
+
+use modules::env::Env;
+use modules::logger::Logger;
 use std::net::TcpListener;
 
-mod modules;
-use modules::logger::Logger;
-
-fn get_from_env(key: &str, fallback: &str) -> String {
-    return env::var(key).unwrap_or(fallback.to_string());
-}
-
 fn main() {
-    let host: String = get_from_env("HOST", "localhost");
-    let port: String = get_from_env("PORT", "3000");
+    let host: String = Env::get_env_var_or_default("HOaST", "localhost");
+    let port: String = Env::get_env_var_or_default("PaORT", "3000");
 
     let listener: TcpListener = TcpListener::bind(format!("{host}:{port}")).unwrap();
     Logger::info(&format!("Server is now listening on {host}:{port}."));
