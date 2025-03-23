@@ -1,24 +1,22 @@
 mod modules;
 
 use modules::config::Env;
+use modules::http::HttpServer;
 use modules::utils::Logger;
-use std::net::TcpListener;
+use std::process;
 
 fn main() {
-    let host: String = Env::get_env_var_or_default("HOST", "127.0.0.1");
-    let port: String = Env::get_env_var_or_default("PORT", "8080");
+    let host: String = Env::get_env_var_or_exit("HOST");
+    let port: String = Env::get_env_var_or_exit("PORT");
 
-    let listener: TcpListener = TcpListener::bind(format!("{host}:{port}")).unwrap();
-    Logger::info(&format!("Server is now listening on {host}:{port}."));
-
-    for stream in listener.incoming() {
-        match stream {
-            Ok(stream) => {
-                Logger::info("Connection established!");
-            }
-            Err(e) => {
-                Logger::error(&format!("Failed to accept connection: {e}"));
-            }
+    match HttpServer::new(port, host) {
+        Ok(server) => {
+            Logger::info(&format!("Server is now listening on {}.", server.address));
+            server.handle_connection();
+        }
+        Err(error) => {
+            Logger::error(&format!("Server startup failed. Error: {error}"));
+            process::exit(1)
         }
     }
 }
