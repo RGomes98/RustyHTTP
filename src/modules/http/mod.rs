@@ -1,2 +1,2 @@
-pub mod server;
-pub use self::server::HttpServer;
+pub mod http_server;
+pub use self::http_server::HttpServer;
