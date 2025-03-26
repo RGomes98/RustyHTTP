@@ -1,6 +1,5 @@
 use chrono::Local;
-use std::fmt;
-use std::str;
+use std::{fmt, str};
 
 enum LogLevelParseError {
     InvalidLogLevel,
@@ -85,22 +84,6 @@ impl From<LogColor> for u8 {
 
 pub struct Logger;
 impl Logger {
-    fn get_timestamp(date_format: &str) -> String {
-        Local::now().format(date_format).to_string()
-    }
-
-    fn colorize(log_message: &str, log_color: LogColor) -> String {
-        let color_code: u8 = log_color.into();
-        format!("\x1b[{color_code}m{log_message}\x1b[0m")
-    }
-
-    fn log(log_message: &str, level_enum: LogLevel, color_enum: LogColor) {
-        let timestamp: String = Self::get_timestamp("%Y-%m-%dT%H:%M:%S");
-        let log_level: String = Self::colorize(&level_enum.to_string(), color_enum);
-        let log_entry: String = format!("[{timestamp}] [{log_level}] - {log_message}");
-        println!("{log_entry}");
-    }
-
     #[cfg(debug_assertions)]
     pub fn debug(log_message: &str) {
         Self::log(log_message, LogLevel::DEBUG, LogColor::GREEN);
@@ -119,5 +102,21 @@ impl Logger {
 
     pub fn error(log_message: &str) {
         Self::log(log_message, LogLevel::ERROR, LogColor::RED);
+    }
+
+    fn get_timestamp(date_format: &str) -> String {
+        Local::now().format(date_format).to_string()
+    }
+
+    fn colorize(log_message: &str, log_color: LogColor) -> String {
+        let color_code: u8 = log_color.into();
+        format!("\x1b[{color_code}m{log_message}\x1b[0m")
+    }
+
+    fn log(log_message: &str, level_enum: LogLevel, color_enum: LogColor) {
+        let timestamp: String = Self::get_timestamp("%Y-%m-%dT%H:%M:%S");
+        let log_level: String = Self::colorize(&level_enum.to_string(), color_enum);
+        let log_entry: String = format!("[{timestamp}] [{log_level}] - {log_message}");
+        println!("{log_entry}");
     }
 }
