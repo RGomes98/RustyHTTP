@@ -28,16 +28,15 @@ impl Router {
     }
 
     pub fn register(&mut self, new_route: Route) {
-        if let Some(Route { method, path, .. }) = self.get_route(&new_route.path, &new_route.method)
-        {
-            Logger::error(&format!(
-                "Error: Route with method '{method}' and path '{path}' is already registered.",
-            ));
-
-            process::exit(1);
-        }
-
-        self.routes.insert(new_route.path.to_string(), new_route);
+        match self.get_route(&new_route.path, &new_route.method) {
+            None => {
+                self.routes.insert(new_route.path.to_string(), new_route);
+            }
+            Some(Route { path, method, .. }) => {
+                Logger::error(&format!("Route [{method}] - '{path}' already exists.",));
+                process::exit(1);
+            }
+        };
     }
 
     fn get_route<'a>(&self, path: &'a String, method: &'a HttpMethod) -> Option<&Route> {
