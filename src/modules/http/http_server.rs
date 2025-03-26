@@ -1,12 +1,10 @@
-use crate::modules::{router::Router, utils::Logger};
+use crate::modules::{http::HttpMethod, router::Router, utils::Logger};
 
 use std::{
     io::{BufRead, BufReader, Error},
     net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream},
     str::FromStr,
 };
-
-use super::HttpMethod;
 
 pub struct Config {
     pub port: String,
