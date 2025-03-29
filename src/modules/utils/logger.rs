@@ -83,6 +83,7 @@ impl From<LogColor> for u8 {
 }
 
 pub struct Logger;
+
 impl Logger {
     #[cfg(debug_assertions)]
     pub fn debug(log_message: &str) {
@@ -104,8 +105,11 @@ impl Logger {
         Self::log(log_message, LogLevel::ERROR, LogColor::RED);
     }
 
-    fn get_timestamp(date_format: &str) -> String {
-        Local::now().format(date_format).to_string()
+    fn log(log_message: &str, level_enum: LogLevel, color_enum: LogColor) {
+        let timestamp: String = Self::get_timestamp("%Y-%m-%dT%H:%M:%S");
+        let log_level: String = Self::colorize(&level_enum.to_string(), color_enum);
+        let log_entry: String = format!("[{timestamp}] [{log_level}] - {log_message}");
+        println!("{log_entry}");
     }
 
     fn colorize(log_message: &str, log_color: LogColor) -> String {
@@ -113,10 +117,7 @@ impl Logger {
         format!("\x1b[{color_code}m{log_message}\x1b[0m")
     }
 
-    fn log(log_message: &str, level_enum: LogLevel, color_enum: LogColor) {
-        let timestamp: String = Self::get_timestamp("%Y-%m-%dT%H:%M:%S");
-        let log_level: String = Self::colorize(&level_enum.to_string(), color_enum);
-        let log_entry: String = format!("[{timestamp}] [{log_level}] - {log_message}");
-        println!("{log_entry}");
+    fn get_timestamp(date_format: &str) -> String {
+        Local::now().format(date_format).to_string()
     }
 }
