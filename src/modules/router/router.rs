@@ -1,75 +1,88 @@
-use crate::modules::{http::HttpMethod, utils::Logger};
-use std::{collections::HashMap, io::Error, process};
+use crate::modules::{http::HttpMethod, http::Request, http::Response, utils::Logger};
 
-//TODO Request module
-pub struct Request {
-    pub message: String,
+use std::fmt;
+use std::sync::OnceLock;
+use std::{collections::HashMap, process};
+
+pub enum RouterError {
+    RouteNotFound,
 }
 
-//TODO Response module
-pub struct Response {
-    pub message: String,
+impl fmt::Display for RouterError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                RouterError::RouteNotFound => "Route not found.",
+            }
+        )
+    }
 }
 
+#[derive(Debug)]
 pub struct Route {
     pub path: String,
     pub method: HttpMethod,
     pub handler: fn(Request, Response),
 }
 
-pub struct Router {
-    routes: HashMap<String, Route>,
-}
+static ROUTE_MAP: OnceLock<HashMap<String, Route>> = OnceLock::new();
+
+pub struct Router;
 
 impl Router {
-    pub fn new() -> Router {
-        let routes: HashMap<String, Route> = HashMap::new();
-        Router { routes }
-    }
+    pub fn new(routes: Vec<Route>) -> Self {
+        let route_map: HashMap<String, Route> = Self::register_routes(routes);
 
-    pub fn register(&mut self, new_route: Route) {
-        match self.get_route(&new_route.path, &new_route.method) {
-            None => {
-                self.routes.insert(new_route.path.to_string(), new_route);
+        match ROUTE_MAP.set(route_map) {
+            Ok(_) => {
+                Logger::info("Routes initialized successfully!");
             }
-            Some(Route { path, method, .. }) => {
-                Logger::error(&format!("Route [{method}] - '{path}' already exists.",));
+            Err(_) => {
+                Logger::error("Failed to initialize routes. 'OnceLock' already initialized.");
                 process::exit(1);
             }
-        };
+        }
+
+        Self
     }
 
-    fn get_route<'a>(&self, path: &'a String, method: &'a HttpMethod) -> Option<&Route> {
-        match self.routes.get(path) {
-            Some(route) if route.method.eq(method) => Some(route),
-            _ => None,
+    pub fn register_routes(routes: Vec<Route>) -> HashMap<String, Route> {
+        let mut route_map: HashMap<String, Route> = HashMap::new();
+
+        routes.into_iter().for_each(|route| {
+            let idenfitier: String = Self::get_route_identifier(&route.path, &route.method);
+
+            match route_map.get(&idenfitier) {
+                Some(Route { path, method, .. }) => {
+                    Logger::error(&format!("Route [{method}] - '{path}' already exists."));
+                    process::exit(1);
+                }
+                None => route_map.insert(idenfitier, route),
+            };
+        });
+
+        route_map
+    }
+
+    pub fn get_route_by_identifier(identifier: String) -> Result<&'static Route, RouterError> {
+        let route_map: &HashMap<String, Route> = Self::get_route_map()?;
+
+        match route_map.get(&identifier) {
+            Some(route) => Ok(route),
+            None => Err(RouterError::RouteNotFound),
         }
     }
 
-    //TODO req/res from http server
-    pub fn invoke_route(&self, path: String, method: HttpMethod) -> Result<(), Error> {
-        if let Some(route) = self.get_route(&path, &method) {
-            //test
-            let request: Request = Request {
-                message: format!("Request to route [{method}] - {path}."),
-            };
-            //test
-            let response: Response = Response {
-                message: format!("Response from route [{method}] - {path}."),
-            };
+    pub fn get_route_identifier(path: &String, method: &HttpMethod) -> String {
+        format!("{method} - {path}")
+    }
 
-            (route.handler)(request, response);
-            Ok(())
-        } else {
-            Logger::error(&format!(
-                "Error: Route with method '{method}' and path '{path}' not found."
-            ));
-
-            Err(Error::new(
-                //add router errors
-                std::io::ErrorKind::NotFound,
-                "Error: Route with method '{method}' and path '{path}' not found.",
-            ))
+    fn get_route_map() -> Result<&'static HashMap<String, Route>, RouterError> {
+        match ROUTE_MAP.get() {
+            Some(routes) => Ok(routes),
+            None => Err(RouterError::RouteNotFound),
         }
     }
 }
