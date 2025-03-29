@@ -6,15 +6,17 @@ use std::{collections::HashMap, process};
 
 pub enum RouterError {
     RouteNotFound,
+    RouterNotInitialized,
 }
 
 impl fmt::Display for RouterError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{}",
+            "Router error: {}",
             match self {
                 RouterError::RouteNotFound => "Route not found.",
+                RouterError::RouterNotInitialized => "Router was not initialized correctly.",
             }
         )
     }
@@ -48,7 +50,20 @@ impl Router {
         Self
     }
 
-    pub fn register_routes(routes: Vec<Route>) -> HashMap<String, Route> {
+    pub fn get_route_by_identifier(identifier: String) -> Result<&'static Route, RouterError> {
+        let route_map: &HashMap<String, Route> = Self::get_route_map()?;
+
+        match route_map.get(&identifier) {
+            Some(route) => Ok(route),
+            None => Err(RouterError::RouteNotFound),
+        }
+    }
+
+    pub fn get_route_identifier(path: &String, method: &HttpMethod) -> String {
+        format!("{method} - {path}")
+    }
+
+    fn register_routes(routes: Vec<Route>) -> HashMap<String, Route> {
         let mut route_map: HashMap<String, Route> = HashMap::new();
 
         routes.into_iter().for_each(|route| {
@@ -66,23 +81,10 @@ impl Router {
         route_map
     }
 
-    pub fn get_route_by_identifier(identifier: String) -> Result<&'static Route, RouterError> {
-        let route_map: &HashMap<String, Route> = Self::get_route_map()?;
-
-        match route_map.get(&identifier) {
-            Some(route) => Ok(route),
-            None => Err(RouterError::RouteNotFound),
-        }
-    }
-
-    pub fn get_route_identifier(path: &String, method: &HttpMethod) -> String {
-        format!("{method} - {path}")
-    }
-
     fn get_route_map() -> Result<&'static HashMap<String, Route>, RouterError> {
         match ROUTE_MAP.get() {
             Some(routes) => Ok(routes),
-            None => Err(RouterError::RouteNotFound),
+            None => Err(RouterError::RouterNotInitialized),
         }
     }
 }

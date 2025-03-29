@@ -1,12 +1,18 @@
 use std::{fmt, str};
 
-pub enum HttpMethodParseError {
+pub enum HttpMethodError {
     InvalidHttpMethod,
 }
 
-impl fmt::Display for HttpMethodParseError {
+impl fmt::Display for HttpMethodError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Invalid HTTP Method")
+        write!(
+            f,
+            "HTTP Error: {}",
+            match self {
+                HttpMethodError::InvalidHttpMethod => "Invalid HTTP method.",
+            }
+        )
     }
 }
 
@@ -23,7 +29,7 @@ pub enum HttpMethod {
 }
 
 impl fmt::Display for HttpMethod {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{}",
@@ -42,7 +48,7 @@ impl fmt::Display for HttpMethod {
 }
 
 impl str::FromStr for HttpMethod {
-    type Err = HttpMethodParseError;
+    type Err = HttpMethodError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
@@ -54,7 +60,7 @@ impl str::FromStr for HttpMethod {
             "HEAD" => Ok(HttpMethod::HEAD),
             "OPTIONS" => Ok(HttpMethod::OPTIONS),
             "TRACE" => Ok(HttpMethod::TRACE),
-            _ => Err(HttpMethodParseError::InvalidHttpMethod),
+            _ => Err(HttpMethodError::InvalidHttpMethod),
         }
     }
 }

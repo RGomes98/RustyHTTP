@@ -1,13 +1,19 @@
 use chrono::Local;
 use std::{fmt, str};
 
-enum LogLevelParseError {
-    InvalidLogLevel,
+enum LogLevelError {
+    ParseError,
 }
 
-impl fmt::Display for LogLevelParseError {
+impl fmt::Display for LogLevelError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Invalid LogLevel")
+        write!(
+            f,
+            "{}",
+            match self {
+                LogLevelError::ParseError => "Invalid log level.",
+            }
+        )
     }
 }
 
@@ -35,7 +41,7 @@ impl fmt::Display for LogLevel {
 }
 
 impl str::FromStr for LogLevel {
-    type Err = LogLevelParseError;
+    type Err = LogLevelError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
@@ -43,7 +49,7 @@ impl str::FromStr for LogLevel {
             "INFO" => Ok(LogLevel::INFO),
             "WARN" => Ok(LogLevel::WARN),
             "ERROR" => Ok(LogLevel::ERROR),
-            _ => Err(LogLevelParseError::InvalidLogLevel),
+            _ => Err(LogLevelError::ParseError),
         }
     }
 }
@@ -57,7 +63,7 @@ enum LogColor {
 }
 
 impl fmt::Display for LogColor {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{}",
