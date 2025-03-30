@@ -1,28 +1,50 @@
 use chrono::Local;
 use std::{fmt, str};
 
-enum LogLevelError {
-    ParseError,
-}
-
-impl fmt::Display for LogLevelError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                LogLevelError::ParseError => "Invalid log level.",
-            }
-        )
-    }
-}
-
 #[derive(Debug)]
 enum LogLevel {
     DEBUG,
     INFO,
     WARN,
     ERROR,
+}
+
+#[derive(Debug)]
+enum LogColor {
+    RED,
+    YELLOW,
+    BLUE,
+    GREEN,
+}
+
+enum LogLevelError {
+    InvalidLogLevel,
+}
+
+impl fmt::Display for LogLevelError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Log Level Error: {}",
+            match self {
+                LogLevelError::InvalidLogLevel => "Invalid log level.",
+            }
+        )
+    }
+}
+
+impl str::FromStr for LogLevel {
+    type Err = LogLevelError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_uppercase().as_str() {
+            "DEBUG" => Ok(LogLevel::DEBUG),
+            "INFO" => Ok(LogLevel::INFO),
+            "WARN" => Ok(LogLevel::WARN),
+            "ERROR" => Ok(LogLevel::ERROR),
+            _ => Err(LogLevelError::InvalidLogLevel),
+        }
+    }
 }
 
 impl fmt::Display for LogLevel {
@@ -40,26 +62,15 @@ impl fmt::Display for LogLevel {
     }
 }
 
-impl str::FromStr for LogLevel {
-    type Err = LogLevelError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_uppercase().as_str() {
-            "DEBUG" => Ok(LogLevel::DEBUG),
-            "INFO" => Ok(LogLevel::INFO),
-            "WARN" => Ok(LogLevel::WARN),
-            "ERROR" => Ok(LogLevel::ERROR),
-            _ => Err(LogLevelError::ParseError),
+impl From<LogColor> for u8 {
+    fn from(c: LogColor) -> Self {
+        match c {
+            LogColor::RED => 31,
+            LogColor::YELLOW => 33,
+            LogColor::BLUE => 34,
+            LogColor::GREEN => 32,
         }
     }
-}
-
-#[derive(Debug)]
-enum LogColor {
-    RED,
-    YELLOW,
-    BLUE,
-    GREEN,
 }
 
 impl fmt::Display for LogColor {
@@ -74,17 +85,6 @@ impl fmt::Display for LogColor {
                 LogColor::GREEN => "GREEN",
             }
         )
-    }
-}
-
-impl From<LogColor> for u8 {
-    fn from(c: LogColor) -> Self {
-        match c {
-            LogColor::RED => 31,
-            LogColor::YELLOW => 33,
-            LogColor::BLUE => 34,
-            LogColor::GREEN => 32,
-        }
     }
 }
 

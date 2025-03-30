@@ -16,8 +16,8 @@ impl Server {
                 Logger::info(&format!("Server is now listening on {}.", server.address()));
                 server.handle_connection();
             }
-            Err(error) => {
-                Logger::error(&format!("Server startup failed. Error: {error}"));
+            Err(err) => {
+                Logger::error(&format!("Server startup failed. {err}"));
                 process::exit(1)
             }
         }

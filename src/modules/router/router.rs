@@ -4,6 +4,15 @@ use std::fmt;
 use std::sync::OnceLock;
 use std::{collections::HashMap, process};
 
+static ROUTE_MAP: OnceLock<HashMap<String, Route>> = OnceLock::new();
+
+#[derive(Debug)]
+pub struct Route {
+    pub path: String,
+    pub method: HttpMethod,
+    pub handler: fn(Request, Option<Response>),
+}
+
 pub enum RouterError {
     RouteNotFound,
     RouterNotInitialized,
@@ -13,7 +22,7 @@ impl fmt::Display for RouterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{}",
+            "Router Error: {}",
             match self {
                 RouterError::RouteNotFound => "Route not found.",
                 RouterError::RouterNotInitialized => "Router was not initialized correctly.",
@@ -21,15 +30,6 @@ impl fmt::Display for RouterError {
         )
     }
 }
-
-#[derive(Debug)]
-pub struct Route {
-    pub path: String,
-    pub method: HttpMethod,
-    pub handler: fn(Request, Option<Response>),
-}
-
-static ROUTE_MAP: OnceLock<HashMap<String, Route>> = OnceLock::new();
 
 pub struct Router;
 
@@ -60,7 +60,7 @@ impl Router {
     }
 
     pub fn get_route_identifier(path: &String, method: &HttpMethod) -> String {
-        format!("{method} - {path}")
+        format!("[{method}] - '{path}'")
     }
 
     fn register_routes(routes: Vec<Route>) -> HashMap<String, Route> {

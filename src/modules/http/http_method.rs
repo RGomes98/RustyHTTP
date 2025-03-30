@@ -1,21 +1,5 @@
 use std::{fmt, str};
 
-pub enum HttpMethodError {
-    InvalidHttpMethod,
-}
-
-impl fmt::Display for HttpMethodError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                HttpMethodError::InvalidHttpMethod => "Invalid HTTP method.",
-            }
-        )
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub enum HttpMethod {
     GET,
@@ -26,6 +10,22 @@ pub enum HttpMethod {
     HEAD,
     OPTIONS,
     TRACE,
+}
+
+pub enum HttpMethodError {
+    InvalidHttpMethod,
+}
+
+impl fmt::Display for HttpMethodError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "HTTP Method Error: {}",
+            match self {
+                HttpMethodError::InvalidHttpMethod => "Invalid HTTP method.",
+            }
+        )
+    }
 }
 
 impl fmt::Display for HttpMethod {

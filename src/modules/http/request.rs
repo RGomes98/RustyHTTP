@@ -2,28 +2,50 @@ use crate::modules::http::{HttpMethod, HttpMethodError};
 
 use std::{fmt, str::FromStr};
 
-pub enum RequestError {
+pub enum ParseRequestError {
     MalformedRequest,
+}
+
+pub enum HttpRequestError {
+    MalformedRequest(ParseRequestError),
     InvalidHttpMethod(HttpMethodError),
 }
 
-impl From<HttpMethodError> for RequestError {
+impl From<HttpMethodError> for HttpRequestError {
     fn from(err: HttpMethodError) -> Self {
-        RequestError::InvalidHttpMethod(err)
+        HttpRequestError::InvalidHttpMethod(err)
     }
 }
 
-impl fmt::Display for RequestError {
+impl From<ParseRequestError> for HttpRequestError {
+    fn from(err: ParseRequestError) -> Self {
+        HttpRequestError::MalformedRequest(err)
+    }
+}
+
+impl fmt::Display for ParseRequestError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            RequestError::MalformedRequest => {
-                write!(
-                    f,
-                    "Malformed HTTP request line. Expected format: 'METHOD PATH HTTP/VERSION'"
-                )
+        write!(
+            f,
+            "HTTP Request Error: {}",
+            match self {
+                ParseRequestError::MalformedRequest =>
+                    "Malformed HTTP request line. Expected format: 'METHOD PATH HTTP/VERSION'.",
             }
-            RequestError::InvalidHttpMethod(err) => write!(f, "{err}"),
-        }
+        )
+    }
+}
+
+impl fmt::Display for HttpRequestError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                HttpRequestError::MalformedRequest(err) => format!("{err}"),
+                HttpRequestError::InvalidHttpMethod(err) => format!("{err}"),
+            }
+        )
     }
 }
 
@@ -34,17 +56,23 @@ pub struct Request {
 }
 
 impl Request {
-    pub fn new(http_request: &[String]) -> Result<Self, RequestError> {
+    pub fn new(http_request: Vec<&str>) -> Result<Self, HttpRequestError> {
         let request_line: Vec<&str> = http_request
             .first()
-            .ok_or(RequestError::MalformedRequest)?
+            .ok_or(ParseRequestError::MalformedRequest)?
             .split_whitespace()
             .collect::<Vec<&str>>();
 
         let (method, path, http_version): (&&str, &&str, &&str) = (
-            request_line.first().ok_or(RequestError::MalformedRequest)?,
-            request_line.get(1).ok_or(RequestError::MalformedRequest)?,
-            request_line.get(2).ok_or(RequestError::MalformedRequest)?,
+            request_line
+                .first()
+                .ok_or(ParseRequestError::MalformedRequest)?,
+            request_line
+                .get(1)
+                .ok_or(ParseRequestError::MalformedRequest)?,
+            request_line
+                .get(2)
+                .ok_or(ParseRequestError::MalformedRequest)?,
         );
 
         Ok(Self {

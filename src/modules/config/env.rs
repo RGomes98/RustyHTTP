@@ -1,11 +1,12 @@
 use crate::modules::utils::Logger;
+
 use std::env;
 
 pub struct Env;
 impl Env {
     pub fn get_env_var_or_exit(variable_name: &str) -> String {
-        Self::get_env_var(variable_name).unwrap_or_else(|error| {
-            Logger::error(&format!("Failed to retrieve environment variable: {error}"));
+        Self::get_env_var(variable_name).unwrap_or_else(|err| {
+            Logger::error(&format!("Failed to retrieve environment variable: {err}"));
             std::process::exit(1)
         })
     }
