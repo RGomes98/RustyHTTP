@@ -1,5 +1,5 @@
 use crate::modules::{
-    http::{HttpMethodError, Request, RequestError},
+    http::{HttpMethodError, HttpRequestError, Request},
     router::{Route, Router, RouterError},
     server::Config,
     utils::Logger,
@@ -21,27 +21,7 @@ pub enum HttpServerError {
     Router(RouterError),
     HttpMethod(HttpMethodError),
     StreamRead(StreamReadError),
-    Request(RequestError),
-}
-
-impl fmt::Display for StreamReadError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            StreamReadError::ParseError(err) => write!(f, "{err}"),
-        }
-    }
-}
-
-impl fmt::Display for HttpServerError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            HttpServerError::Request(err) => write!(f, "{err}"),
-            HttpServerError::Io(err) => write!(f, "{err}"),
-            HttpServerError::StreamRead(err) => write!(f, "{err}"),
-            HttpServerError::Router(err) => write!(f, "{err}"),
-            HttpServerError::HttpMethod(err) => write!(f, "{err}"),
-        }
-    }
+    Request(HttpRequestError),
 }
 
 impl From<Error> for StreamReadError {
@@ -74,9 +54,37 @@ impl From<StreamReadError> for HttpServerError {
     }
 }
 
-impl From<RequestError> for HttpServerError {
-    fn from(err: RequestError) -> Self {
+impl From<HttpRequestError> for HttpServerError {
+    fn from(err: HttpRequestError) -> Self {
         HttpServerError::Request(err)
+    }
+}
+
+impl fmt::Display for StreamReadError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Stream Read Error: {}",
+            match self {
+                StreamReadError::ParseError(err) => format!("Failed to parse stream. {err}"),
+            }
+        )
+    }
+}
+
+impl fmt::Display for HttpServerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                HttpServerError::Io(err) => format!("{err}"),
+                HttpServerError::StreamRead(err) => format!("{err}"),
+                HttpServerError::Router(err) => format!("{err}"),
+                HttpServerError::HttpMethod(err) => format!("{err}"),
+                HttpServerError::Request(err) => format!("{err}"),
+            }
+        )
     }
 }
 
@@ -104,7 +112,7 @@ impl HttpServer {
         let address: String = SocketAddr::from((host, port)).to_string();
         let listener: TcpListener = TcpListener::bind(&address)?;
 
-        Ok(HttpServer { config, listener })
+        Ok(Self { config, listener })
     }
 
     pub fn address(&self) -> String {
@@ -115,25 +123,25 @@ impl HttpServer {
         for stream in self.listener.incoming() {
             match stream {
                 Ok(mut stream) => Self::read_stream(&mut stream),
-                Err(err) => Logger::error(&format!("Error accepting incoming stream: {err}")),
+                Err(err) => Logger::error(&format!("Error accepting incoming stream. {err}")),
             }
         }
     }
 
     fn read_stream(stream: &mut TcpStream) {
         if let Err(err) = Self::dispatch_request(stream) {
-            Logger::error(&format!("Failed to dispatch request: {err}"))
+            Logger::error(&format!("Failed to dispatch request. {err}"))
         }
     }
 
     fn dispatch_request(stream: &mut TcpStream) -> Result<(), HttpServerError> {
         let incoming_stream: String = Self::parse_stream(stream)?;
-        let http_request: Vec<String> = Self::parse_request(incoming_stream);
+        let http_request: Vec<&str> = Self::parse_request(&incoming_stream);
+        let request: Request = Request::new(http_request)?;
 
-        let request: Request = Request::new(&http_request)?;
         let identifier: String = Router::get_route_identifier(&request.path, &request.method);
-
         let route: &Route = Router::get_route_by_identifier(identifier)?;
+
         (route.handler)(request, None);
         Ok(())
     }
@@ -147,11 +155,10 @@ impl HttpServer {
         }
     }
 
-    fn parse_request(request: String) -> Vec<String> {
+    fn parse_request(request: &str) -> Vec<&str> {
         request
             .lines()
             .take_while(|line| !line.trim().is_empty())
-            .map(|line| line.to_string())
-            .collect::<Vec<String>>()
+            .collect::<Vec<&str>>()
     }
 }
