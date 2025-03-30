@@ -1,6 +1,9 @@
 use crate::modules::http::{HttpMethod, HttpMethodError};
 
-use std::{fmt, str::FromStr};
+use std::{
+    fmt,
+    str::{FromStr, SplitWhitespace},
+};
 
 pub enum ParseRequestError {
     MalformedRequest,
@@ -57,21 +60,20 @@ pub struct Request {
 
 impl Request {
     pub fn new(http_request: Vec<&str>) -> Result<Self, HttpRequestError> {
-        let request_line: Vec<&str> = http_request
+        let mut request_line: SplitWhitespace<'_> = http_request
             .first()
             .ok_or(ParseRequestError::MalformedRequest)?
-            .split_whitespace()
-            .collect::<Vec<&str>>();
+            .split_whitespace();
 
-        let (method, path, http_version): (&&str, &&str, &&str) = (
+        let (method, path, http_version): (&str, &str, &str) = (
             request_line
-                .first()
+                .next()
                 .ok_or(ParseRequestError::MalformedRequest)?,
             request_line
-                .get(1)
+                .next()
                 .ok_or(ParseRequestError::MalformedRequest)?,
             request_line
-                .get(2)
+                .next()
                 .ok_or(ParseRequestError::MalformedRequest)?,
         );
 
