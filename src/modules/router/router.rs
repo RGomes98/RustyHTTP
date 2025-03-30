@@ -13,7 +13,7 @@ impl fmt::Display for RouterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Router error: {}",
+            "{}",
             match self {
                 RouterError::RouteNotFound => "Route not found.",
                 RouterError::RouterNotInitialized => "Router was not initialized correctly.",
@@ -26,7 +26,7 @@ impl fmt::Display for RouterError {
 pub struct Route {
     pub path: String,
     pub method: HttpMethod,
-    pub handler: fn(Request, Response),
+    pub handler: fn(Request, Option<Response>),
 }
 
 static ROUTE_MAP: OnceLock<HashMap<String, Route>> = OnceLock::new();

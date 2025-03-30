@@ -1,5 +1,5 @@
 use crate::modules::{
-    http::{HttpMethod, HttpMethodError},
+    http::{HttpMethodError, Request, RequestError},
     router::{Route, Router, RouterError},
     server::Config,
     utils::Logger,
@@ -9,7 +9,7 @@ use std::{
     fmt,
     io::{Error, Read},
     net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream},
-    str::{FromStr, SplitWhitespace},
+    str::FromStr,
 };
 
 pub enum StreamReadError {
@@ -21,12 +21,13 @@ pub enum HttpServerError {
     Router(RouterError),
     HttpMethod(HttpMethodError),
     StreamRead(StreamReadError),
+    Request(RequestError),
 }
 
 impl fmt::Display for StreamReadError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            StreamReadError::ParseError(err) => write!(f, "Failed to parse stream: {err}."),
+            StreamReadError::ParseError(err) => write!(f, "{err}"),
         }
     }
 }
@@ -34,7 +35,8 @@ impl fmt::Display for StreamReadError {
 impl fmt::Display for HttpServerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            HttpServerError::Io(err) => write!(f, "IO error: {err}."),
+            HttpServerError::Request(err) => write!(f, "{err}"),
+            HttpServerError::Io(err) => write!(f, "{err}"),
             HttpServerError::StreamRead(err) => write!(f, "{err}"),
             HttpServerError::Router(err) => write!(f, "{err}"),
             HttpServerError::HttpMethod(err) => write!(f, "{err}"),
@@ -69,6 +71,12 @@ impl From<HttpMethodError> for HttpServerError {
 impl From<StreamReadError> for HttpServerError {
     fn from(err: StreamReadError) -> Self {
         HttpServerError::StreamRead(err)
+    }
+}
+
+impl From<RequestError> for HttpServerError {
+    fn from(err: RequestError) -> Self {
+        HttpServerError::Request(err)
     }
 }
 
@@ -107,7 +115,7 @@ impl HttpServer {
         for stream in self.listener.incoming() {
             match stream {
                 Ok(mut stream) => Self::read_stream(&mut stream),
-                Err(err) => Logger::error(&format!("Error accepting incoming connection {err}")),
+                Err(err) => Logger::error(&format!("Error accepting incoming stream: {err}")),
             }
         }
     }
@@ -119,19 +127,14 @@ impl HttpServer {
     }
 
     fn dispatch_request(stream: &mut TcpStream) -> Result<(), HttpServerError> {
-        let request: String = Self::parse_stream(stream)?;
-        let http_request: Vec<String> = Self::parse_request(request);
+        let incoming_stream: String = Self::parse_stream(stream)?;
+        let http_request: Vec<String> = Self::parse_request(incoming_stream);
 
-        //TODO
-        let mut split: SplitWhitespace<'_> = http_request[0].split_whitespace();
-        let method: &str = split.next().unwrap_or("");
-        let path: &str = split.next().unwrap_or("");
-        //
+        let request: Request = Request::new(&http_request)?;
+        let identifier: String = Router::get_route_identifier(&request.path, &request.method);
 
-        let http_method: HttpMethod = HttpMethod::from_str(method)?;
-        let identifier: String = Router::get_route_identifier(&path.to_string(), &http_method);
         let route: &Route = Router::get_route_by_identifier(identifier)?;
-
+        (route.handler)(request, None);
         Ok(())
     }
 

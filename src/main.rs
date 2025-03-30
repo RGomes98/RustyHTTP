@@ -13,12 +13,22 @@ fn main() {
         Route {
             method: HttpMethod::GET,
             path: String::from("/"),
-            handler: |request, response| println!("Handling request to route 1"),
+            handler: |request, response| {
+                println!(
+                    "Handling request to route 1. [{}] - '{}' - ({})",
+                    request.method, request.path, request.http_version
+                )
+            },
         },
         Route {
-            method: HttpMethod::POST,
-            path: String::from("/"),
-            handler: |request, response| println!("Handling request to route 2"),
+            method: HttpMethod::GET,
+            path: String::from("/home"),
+            handler: |request, response| {
+                println!(
+                    "Handling request to route 2. [{}] - '{}' - ({})",
+                    request.method, request.path, request.http_version
+                )
+            },
         },
     ]);
 

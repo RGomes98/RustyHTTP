@@ -8,7 +8,7 @@ impl fmt::Display for HttpMethodError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "HTTP Error: {}",
+            "{}",
             match self {
                 HttpMethodError::InvalidHttpMethod => "Invalid HTTP method.",
             }
