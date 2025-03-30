@@ -13,20 +13,20 @@ fn main() {
         Route {
             method: HttpMethod::GET,
             path: String::from("/"),
-            handler: |request, response| {
+            handler: |req, res| {
                 println!(
                     "Handling request to route 1. [{}] - '{}' - ({})",
-                    request.method, request.path, request.http_version
+                    req.method, req.path, req.http_version
                 )
             },
         },
         Route {
             method: HttpMethod::GET,
             path: String::from("/home"),
-            handler: |request, response| {
+            handler: |req, res| {
                 println!(
                     "Handling request to route 2. [{}] - '{}' - ({})",
-                    request.method, request.path, request.http_version
+                    req.method, req.path, req.http_version
                 )
             },
         },

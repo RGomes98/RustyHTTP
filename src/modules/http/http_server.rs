@@ -1,5 +1,5 @@
 use crate::modules::{
-    http::{HttpMethodError, HttpRequestError, Request},
+    http::{HttpRequestError, Request},
     router::{Route, Router, RouterError},
     server::Config,
     utils::Logger,
@@ -17,9 +17,7 @@ pub enum StreamReadError {
 }
 
 pub enum HttpServerError {
-    Io(Error),
     Router(RouterError),
-    HttpMethod(HttpMethodError),
     StreamRead(StreamReadError),
     Request(HttpRequestError),
 }
@@ -30,21 +28,9 @@ impl From<Error> for StreamReadError {
     }
 }
 
-impl From<Error> for HttpServerError {
-    fn from(err: Error) -> Self {
-        HttpServerError::Io(err)
-    }
-}
-
 impl From<RouterError> for HttpServerError {
     fn from(err: RouterError) -> Self {
         HttpServerError::Router(err)
-    }
-}
-
-impl From<HttpMethodError> for HttpServerError {
-    fn from(err: HttpMethodError) -> Self {
-        HttpServerError::HttpMethod(err)
     }
 }
 
@@ -78,10 +64,8 @@ impl fmt::Display for HttpServerError {
             f,
             "{}",
             match self {
-                HttpServerError::Io(err) => format!("{err}"),
                 HttpServerError::StreamRead(err) => format!("{err}"),
                 HttpServerError::Router(err) => format!("{err}"),
-                HttpServerError::HttpMethod(err) => format!("{err}"),
                 HttpServerError::Request(err) => format!("{err}"),
             }
         )
@@ -109,8 +93,8 @@ impl HttpServer {
             )
         })?;
 
-        let address: String = SocketAddr::from((host, port)).to_string();
-        let listener: TcpListener = TcpListener::bind(&address)?;
+        let address: SocketAddr = SocketAddr::from((host, port));
+        let listener: TcpListener = TcpListener::bind(address)?;
 
         Ok(Self { config, listener })
     }

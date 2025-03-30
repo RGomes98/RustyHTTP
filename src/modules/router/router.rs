@@ -36,10 +36,12 @@ pub struct Router;
 impl Router {
     pub fn new(routes: Vec<Route>) -> Self {
         let route_map: HashMap<String, Route> = Self::register_routes(routes);
+        let route_count: usize = route_map.len();
 
         match ROUTE_MAP.set(route_map) {
             Ok(_) => {
-                Logger::info("Routes initialized successfully!");
+                Logger::info(&format!("Initializing {route_count} routes."));
+                Logger::info("All routes were initialized successfully!");
             }
             Err(_) => {
                 Logger::error("Failed to initialize routes. 'OnceLock' already initialized.");
