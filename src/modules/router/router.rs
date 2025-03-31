@@ -84,8 +84,8 @@ impl Router {
             let idenfitier: String = Self::get_route_identifier(&route.path, &route.method);
 
             match route_map.get(&idenfitier) {
-                Some(Route { path, method, .. }) => {
-                    Logger::error(&format!("Route [{method}] - '{path}' already exists."));
+                Some(_) => {
+                    Logger::error(&format!("Route {idenfitier} already exists."));
                     process::exit(1);
                 }
                 None => route_map.insert(idenfitier, route),

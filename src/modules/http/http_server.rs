@@ -22,12 +22,6 @@ pub enum HttpServerError {
     Request(HttpRequestError),
 }
 
-impl From<Error> for StreamReadError {
-    fn from(err: Error) -> Self {
-        StreamReadError::ParseError(err)
-    }
-}
-
 impl From<RouterError> for HttpServerError {
     fn from(err: RouterError) -> Self {
         HttpServerError::Router(err)
