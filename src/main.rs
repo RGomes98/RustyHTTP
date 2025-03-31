@@ -1,36 +1,16 @@
 mod modules;
+mod routes;
 
 use modules::config::Env;
-use modules::http::HttpMethod;
-use modules::router::{Route, Router};
+use modules::router::Router;
 use modules::server::{Config, Server};
+
+use routes::core::core_routes;
 
 fn main() {
     let host: String = Env::get_env_var_or_exit("HOST");
     let port: String = Env::get_env_var_or_exit("PORT");
 
-    Router::new(vec![
-        Route {
-            method: HttpMethod::GET,
-            path: String::from("/"),
-            handler: |req, res| {
-                println!(
-                    "Handling request to route 1. [{}] - '{}' - ({})",
-                    req.method, req.path, req.http_version
-                )
-            },
-        },
-        Route {
-            method: HttpMethod::GET,
-            path: String::from("/home"),
-            handler: |req, res| {
-                println!(
-                    "Handling request to route 2. [{}] - '{}' - ({})",
-                    req.method, req.path, req.http_version
-                )
-            },
-        },
-    ]);
-
+    Router::new(Router::initialize_modules([core_routes()]));
     Server::new(Config { host, port });
 }

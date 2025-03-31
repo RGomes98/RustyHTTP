@@ -52,6 +52,18 @@ impl Router {
         Self
     }
 
+    pub fn initialize_modules<const R: usize, const M: usize>(
+        modules: [[Route; R]; M],
+    ) -> Vec<Route> {
+        let mut all_routes: Vec<Route> = Vec::new();
+
+        modules
+            .into_iter()
+            .for_each(|module| all_routes.extend(module));
+
+        all_routes
+    }
+
     pub fn get_route_by_identifier(identifier: String) -> Result<&'static Route, RouterError> {
         let route_map: &HashMap<String, Route> = Self::get_route_map()?;
 
