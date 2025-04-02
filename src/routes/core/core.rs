@@ -6,14 +6,14 @@ use crate::modules::{
 pub fn core_routes() -> [Route; 2] {
     [
         Route {
+            path: "/version",
             handler: version,
             method: HttpMethod::GET,
-            path: String::from("/version"),
         },
         Route {
+            path: "/ping",
             handler: ping,
             method: HttpMethod::GET,
-            path: String::from("/ping"),
         },
     ]
 }

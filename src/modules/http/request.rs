@@ -52,15 +52,15 @@ impl fmt::Display for HttpRequestError {
     }
 }
 
-pub struct Request {
+pub struct Request<'a> {
     pub method: HttpMethod,
-    pub path: String,
+    pub path: &'a str,
     pub http_version: String,
 }
 
-impl Request {
-    pub fn new(http_request: Vec<&str>) -> Result<Self, HttpRequestError> {
-        let mut request_line: SplitWhitespace<'_> = http_request
+impl<'a> Request<'a> {
+    pub fn new(http_request: Vec<&'a str>) -> Result<Self, HttpRequestError> {
+        let mut request_line: SplitWhitespace<'a> = http_request
             .first()
             .ok_or(ParseRequestError::MalformedRequest)?
             .split_whitespace();
@@ -78,7 +78,7 @@ impl Request {
         );
 
         Ok(Self {
-            path: path.to_string(),
+            path,
             method: HttpMethod::from_str(method)?,
             http_version: http_version.to_string(),
         })

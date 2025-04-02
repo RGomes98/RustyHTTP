@@ -8,7 +8,7 @@ static ROUTE_MAP: OnceLock<HashMap<String, Route>> = OnceLock::new();
 
 #[derive(Debug)]
 pub struct Route {
-    pub path: String,
+    pub path: &'static str,
     pub method: HttpMethod,
     pub handler: fn(Request, Option<Response>),
 }
@@ -55,13 +55,7 @@ impl Router {
     pub fn initialize_modules<const R: usize, const M: usize>(
         modules: [[Route; R]; M],
     ) -> Vec<Route> {
-        let mut all_routes: Vec<Route> = Vec::new();
-
-        modules
-            .into_iter()
-            .for_each(|module| all_routes.extend(module));
-
-        all_routes
+        modules.into_iter().flatten().collect::<Vec<Route>>()
     }
 
     pub fn get_route_by_identifier(identifier: String) -> Result<&'static Route, RouterError> {
@@ -73,7 +67,7 @@ impl Router {
         }
     }
 
-    pub fn get_route_identifier(path: &String, method: &HttpMethod) -> String {
+    pub fn get_route_identifier(path: &str, method: &HttpMethod) -> String {
         format!("[{method}] - '{path}'")
     }
 
