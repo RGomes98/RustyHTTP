@@ -1,25 +1,19 @@
-use crate::modules::{
-    http::{HttpRequestError, Request},
-    router::{Route, Router, RouterError},
-    server::Config,
-    utils::Logger,
-};
+use crate::modules::http::{Request, RequestError};
+use crate::modules::router::{Route, Router, RouterError};
+use crate::modules::server::Config;
+use crate::modules::utils::Logger;
 
-use std::{
-    fmt,
-    io::{Error, Read},
-    net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream},
-    str::FromStr,
-};
+use std::fmt;
+use std::io::{Error, Read};
+use std::net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream};
+use std::str::FromStr;
 
-pub enum StreamReadError {
-    ParseError(Error),
-}
+const BUFFER_SIZE: usize = 4096;
 
 pub enum HttpServerError {
+    Io(Error),
     Router(RouterError),
-    StreamRead(StreamReadError),
-    Request(HttpRequestError),
+    Request(RequestError),
 }
 
 impl From<RouterError> for HttpServerError {
@@ -28,41 +22,21 @@ impl From<RouterError> for HttpServerError {
     }
 }
 
-impl From<StreamReadError> for HttpServerError {
-    fn from(err: StreamReadError) -> Self {
-        HttpServerError::StreamRead(err)
-    }
-}
-
-impl From<HttpRequestError> for HttpServerError {
-    fn from(err: HttpRequestError) -> Self {
+impl From<RequestError> for HttpServerError {
+    fn from(err: RequestError) -> Self {
         HttpServerError::Request(err)
-    }
-}
-
-impl fmt::Display for StreamReadError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Stream Read Error: {}",
-            match self {
-                StreamReadError::ParseError(err) => format!("Failed to parse stream. {err}"),
-            }
-        )
     }
 }
 
 impl fmt::Display for HttpServerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                HttpServerError::StreamRead(err) => format!("{err}"),
-                HttpServerError::Router(err) => format!("{err}"),
-                HttpServerError::Request(err) => format!("{err}"),
-            }
-        )
+        let m: String = match self {
+            HttpServerError::Io(err) => format!("Stream I/O error: {err}."),
+            HttpServerError::Router(err) => format!("{err}"),
+            HttpServerError::Request(err) => format!("{err}"),
+        };
+
+        write!(f, "{m}")
     }
 }
 
@@ -101,14 +75,14 @@ impl HttpServer {
         for stream in self.listener.incoming() {
             match stream {
                 Ok(mut stream) => Self::read_stream(&mut stream),
-                Err(err) => Logger::error(&format!("Error accepting incoming stream. {err}")),
+                Err(err) => Logger::error(&err.to_string()),
             }
         }
     }
 
     fn read_stream(stream: &mut TcpStream) {
         if let Err(err) = Self::dispatch_request(stream) {
-            Logger::error(&format!("Failed to dispatch request. {err}"))
+            Logger::error(&err.to_string())
         }
     }
 
@@ -124,12 +98,12 @@ impl HttpServer {
         Ok(())
     }
 
-    fn parse_stream(stream: &mut TcpStream) -> Result<String, StreamReadError> {
-        let mut buffer: [u8; 4096] = [0; 4096];
+    fn parse_stream(stream: &mut TcpStream) -> Result<String, HttpServerError> {
+        let mut buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
 
         match stream.read(&mut buffer) {
             Ok(size) => Ok(String::from_utf8_lossy(&buffer[..size]).to_string()),
-            Err(err) => Err(StreamReadError::ParseError(err)),
+            Err(err) => Err(HttpServerError::Io(err)),
         }
     }
 

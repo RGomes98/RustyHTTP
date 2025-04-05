@@ -18,18 +18,12 @@ enum LogColor {
 }
 
 enum LogLevelError {
-    InvalidLogLevel,
+    Invalid,
 }
 
 impl fmt::Display for LogLevelError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Log Level Error: {}",
-            match self {
-                LogLevelError::InvalidLogLevel => "Invalid log level.",
-            }
-        )
+        write!(f, "Invalid log level.")
     }
 }
 
@@ -42,29 +36,27 @@ impl str::FromStr for LogLevel {
             "INFO" => Ok(LogLevel::INFO),
             "WARN" => Ok(LogLevel::WARN),
             "ERROR" => Ok(LogLevel::ERROR),
-            _ => Err(LogLevelError::InvalidLogLevel),
+            _ => Err(LogLevelError::Invalid),
         }
     }
 }
 
 impl fmt::Display for LogLevel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                LogLevel::DEBUG => "DEBUG",
-                LogLevel::INFO => "INFO",
-                LogLevel::WARN => "WARN",
-                LogLevel::ERROR => "ERROR",
-            }
-        )
+        let m: &str = match self {
+            LogLevel::DEBUG => "DEBUG",
+            LogLevel::INFO => "INFO",
+            LogLevel::WARN => "WARN",
+            LogLevel::ERROR => "ERROR",
+        };
+
+        write!(f, "{m}")
     }
 }
 
 impl From<LogColor> for u8 {
-    fn from(c: LogColor) -> Self {
-        match c {
+    fn from(v: LogColor) -> Self {
+        match v {
             LogColor::RED => 31,
             LogColor::YELLOW => 33,
             LogColor::BLUE => 34,
@@ -75,16 +67,14 @@ impl From<LogColor> for u8 {
 
 impl fmt::Display for LogColor {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                LogColor::RED => "RED",
-                LogColor::YELLOW => "YELLOW",
-                LogColor::BLUE => "BLUE",
-                LogColor::GREEN => "GREEN",
-            }
-        )
+        let m: &str = match self {
+            LogColor::RED => "RED",
+            LogColor::YELLOW => "YELLOW",
+            LogColor::BLUE => "BLUE",
+            LogColor::GREEN => "GREEN",
+        };
+
+        write!(f, "{m}")
     }
 }
 

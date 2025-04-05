@@ -1,8 +1,10 @@
-use crate::modules::{http::HttpMethod, http::Request, http::Response, utils::Logger};
+use crate::modules::http::{HttpMethod, HttpStatusCode, HttpStatusCodeError, Request, Response};
+use crate::modules::utils::Logger;
 
+use std::collections::HashMap;
 use std::fmt;
+use std::process;
 use std::sync::OnceLock;
-use std::{collections::HashMap, process};
 
 static ROUTE_MAP: OnceLock<HashMap<String, Route>> = OnceLock::new();
 
@@ -14,20 +16,22 @@ pub struct Route {
 }
 
 pub enum RouterError {
-    RouteNotFound,
-    RouterNotInitialized,
+    NotFound(HttpStatusCodeError),
+    NotInitialized(HttpStatusCodeError),
 }
 
 impl fmt::Display for RouterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Router Error: {}",
-            match self {
-                RouterError::RouteNotFound => "Route not found.",
-                RouterError::RouterNotInitialized => "Router was not initialized correctly.",
+        let m: String = match self {
+            RouterError::NotFound(err) => {
+                format!("No route matched the request. {err}")
             }
-        )
+            RouterError::NotInitialized(err) => {
+                format!("The router was not initialized correctly. {err}")
+            }
+        };
+
+        write!(f, "{m}")
     }
 }
 
@@ -63,7 +67,9 @@ impl Router {
 
         match route_map.get(&identifier) {
             Some(route) => Ok(route),
-            None => Err(RouterError::RouteNotFound),
+            None => Err(RouterError::NotFound(HttpStatusCodeError::from_status(
+                HttpStatusCode::NotFound,
+            ))),
         }
     }
 
@@ -75,7 +81,7 @@ impl Router {
         let mut route_map: HashMap<String, Route> = HashMap::new();
 
         routes.into_iter().for_each(|route| {
-            let idenfitier: String = Self::get_route_identifier(&route.path, &route.method);
+            let idenfitier: String = Self::get_route_identifier(route.path, &route.method);
 
             match route_map.get(&idenfitier) {
                 Some(_) => {
@@ -92,7 +98,9 @@ impl Router {
     fn get_route_map() -> Result<&'static HashMap<String, Route>, RouterError> {
         match ROUTE_MAP.get() {
             Some(routes) => Ok(routes),
-            None => Err(RouterError::RouterNotInitialized),
+            None => Err(RouterError::NotInitialized(
+                HttpStatusCodeError::from_status(HttpStatusCode::InternalServerError),
+            )),
         }
     }
 }

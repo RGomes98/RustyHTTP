@@ -1,54 +1,37 @@
-use crate::modules::http::{HttpMethod, HttpMethodError};
+use crate::modules::http::{HttpMethod, HttpMethodError, HttpStatusCode, HttpStatusCodeError};
 
-use std::{
-    fmt,
-    str::{FromStr, SplitWhitespace},
-};
+use std::fmt;
+use std::str::{FromStr, SplitWhitespace};
 
-pub enum ParseRequestError {
-    MalformedRequest,
+pub enum RequestError {
+    Malformed(HttpStatusCodeError),
+    InvalidMethod(HttpMethodError),
 }
 
-pub enum HttpRequestError {
-    MalformedRequest(ParseRequestError),
-    InvalidHttpMethod(HttpMethodError),
+impl From<HttpStatusCodeError> for RequestError {
+    fn from(err: HttpStatusCodeError) -> Self {
+        RequestError::Malformed(err)
+    }
 }
 
-impl From<HttpMethodError> for HttpRequestError {
+impl From<HttpMethodError> for RequestError {
     fn from(err: HttpMethodError) -> Self {
-        HttpRequestError::InvalidHttpMethod(err)
+        RequestError::InvalidMethod(err)
     }
 }
 
-impl From<ParseRequestError> for HttpRequestError {
-    fn from(err: ParseRequestError) -> Self {
-        HttpRequestError::MalformedRequest(err)
-    }
-}
-
-impl fmt::Display for ParseRequestError {
+impl fmt::Display for RequestError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "HTTP Request Error: {}",
-            match self {
-                ParseRequestError::MalformedRequest =>
-                    "Malformed HTTP request line. Expected format: 'METHOD PATH HTTP/VERSION'.",
+        let m: String = match self {
+            RequestError::Malformed(err) => {
+                format!("Malformed HTTP request line. Expected 'METHOD PATH HTTP/VERSION': {err}")
             }
-        )
-    }
-}
+            RequestError::InvalidMethod(err) => {
+                format!("{err}")
+            }
+        };
 
-impl fmt::Display for HttpRequestError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                HttpRequestError::MalformedRequest(err) => format!("{err}"),
-                HttpRequestError::InvalidHttpMethod(err) => format!("{err}"),
-            }
-        )
+        write!(f, "{m}")
     }
 }
 
@@ -59,22 +42,22 @@ pub struct Request<'a> {
 }
 
 impl<'a> Request<'a> {
-    pub fn new(http_request: Vec<&'a str>) -> Result<Self, HttpRequestError> {
+    pub fn new(http_request: Vec<&'a str>) -> Result<Self, RequestError> {
         let mut request_line: SplitWhitespace<'a> = http_request
             .first()
-            .ok_or(ParseRequestError::MalformedRequest)?
+            .ok_or(HttpStatusCodeError::from_status(HttpStatusCode::BadRequest))?
             .split_whitespace();
 
         let (method, path, http_version): (&str, &str, &str) = (
             request_line
                 .next()
-                .ok_or(ParseRequestError::MalformedRequest)?,
+                .ok_or(HttpStatusCodeError::from_status(HttpStatusCode::BadRequest))?,
             request_line
                 .next()
-                .ok_or(ParseRequestError::MalformedRequest)?,
+                .ok_or(HttpStatusCodeError::from_status(HttpStatusCode::BadRequest))?,
             request_line
                 .next()
-                .ok_or(ParseRequestError::MalformedRequest)?,
+                .ok_or(HttpStatusCodeError::from_status(HttpStatusCode::BadRequest))?,
         );
 
         Ok(Self {

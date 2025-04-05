@@ -1,29 +1,56 @@
 use std::fmt;
 
 pub enum HttpStatusCodeError {
-    ConversionError,
+    UnknownStatusCode(HttpStatusCode),
+    NonErrorStatusCode(HttpStatusCode),
+    FromErrorStatus(HttpStatusCode),
 }
 
 impl fmt::Display for HttpStatusCodeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                HttpStatusCodeError::ConversionError =>
-                    "Failed to convert u16 to HTTP status code.",
+        let (label, status_code): (&str, &HttpStatusCode) = match self {
+            HttpStatusCodeError::UnknownStatusCode(status) => {
+                ("Unrecognized HTTP status code", status)
             }
-        )
+            HttpStatusCodeError::NonErrorStatusCode(status) => {
+                ("Expected an error status (4xx or 5xx)", status)
+            }
+            HttpStatusCodeError::FromErrorStatus(status) => {
+                ("Encountered unexpected HTTP error", status)
+            }
+        };
+
+        write!(f, "{label}: {}.", Self::describe_status(status_code))
     }
 }
 
-#[derive(Debug)]
+impl HttpStatusCodeError {
+    fn describe_status(status_code: &HttpStatusCode) -> String {
+        let code: u16 = (*status_code).into();
+        format!("[{code}] - {status_code}")
+    }
+
+    fn from_error_status(status_code: HttpStatusCode) -> Result<Self, HttpStatusCode> {
+        if status_code.is_error() {
+            Ok(Self::FromErrorStatus(status_code))
+        } else {
+            Err(status_code)
+        }
+    }
+
+    pub fn from_status(status_code: HttpStatusCode) -> Self {
+        Self::from_error_status(status_code).unwrap_or(Self::NonErrorStatusCode(
+            HttpStatusCode::InternalServerError,
+        ))
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
 pub enum HttpStatusCode {
     Continue = 100,
     SwitchingProtocols = 101,
     Processing = 102,
     EarlyHints = 103,
-
     Ok = 200,
     Created = 201,
     Accepted = 202,
@@ -34,7 +61,6 @@ pub enum HttpStatusCode {
     MultiStatus = 207,
     AlreadyReported = 208,
     ImUsed = 226,
-
     MultipleChoices = 300,
     MovedPermanently = 301,
     Found = 302,
@@ -43,7 +69,6 @@ pub enum HttpStatusCode {
     UseProxy = 305,
     TemporaryRedirect = 307,
     PermanentRedirect = 308,
-
     BadRequest = 400,
     Unauthorized = 401,
     PaymentRequired = 402,
@@ -73,7 +98,6 @@ pub enum HttpStatusCode {
     TooManyRequests = 429,
     RequestHeaderFieldsTooLarge = 431,
     UnavailableForLegalReasons = 451,
-
     InternalServerError = 500,
     NotImplemented = 501,
     BadGateway = 502,
@@ -154,7 +178,78 @@ impl TryFrom<u16> for HttpStatusCode {
             508 => Ok(Self::LoopDetected),
             510 => Ok(Self::NotExtended),
             511 => Ok(Self::NetworkAuthenticationRequired),
-            _ => Err(HttpStatusCodeError::ConversionError),
+            _ => Err(HttpStatusCodeError::UnknownStatusCode(
+                HttpStatusCode::InternalServerError,
+            )),
+        }
+    }
+}
+
+impl From<HttpStatusCode> for u16 {
+    fn from(status_code: HttpStatusCode) -> Self {
+        match status_code {
+            HttpStatusCode::Continue => 100,
+            HttpStatusCode::SwitchingProtocols => 101,
+            HttpStatusCode::Processing => 102,
+            HttpStatusCode::EarlyHints => 103,
+            HttpStatusCode::Ok => 200,
+            HttpStatusCode::Created => 201,
+            HttpStatusCode::Accepted => 202,
+            HttpStatusCode::NonAuthoritativeInformation => 203,
+            HttpStatusCode::NoContent => 204,
+            HttpStatusCode::ResetContent => 205,
+            HttpStatusCode::PartialContent => 206,
+            HttpStatusCode::MultiStatus => 207,
+            HttpStatusCode::AlreadyReported => 208,
+            HttpStatusCode::ImUsed => 226,
+            HttpStatusCode::MultipleChoices => 300,
+            HttpStatusCode::MovedPermanently => 301,
+            HttpStatusCode::Found => 302,
+            HttpStatusCode::SeeOther => 303,
+            HttpStatusCode::NotModified => 304,
+            HttpStatusCode::UseProxy => 305,
+            HttpStatusCode::TemporaryRedirect => 307,
+            HttpStatusCode::PermanentRedirect => 308,
+            HttpStatusCode::BadRequest => 400,
+            HttpStatusCode::Unauthorized => 401,
+            HttpStatusCode::PaymentRequired => 402,
+            HttpStatusCode::Forbidden => 403,
+            HttpStatusCode::NotFound => 404,
+            HttpStatusCode::MethodNotAllowed => 405,
+            HttpStatusCode::NotAcceptable => 406,
+            HttpStatusCode::ProxyAuthenticationRequired => 407,
+            HttpStatusCode::RequestTimeout => 408,
+            HttpStatusCode::Conflict => 409,
+            HttpStatusCode::Gone => 410,
+            HttpStatusCode::LengthRequired => 411,
+            HttpStatusCode::PreconditionFailed => 412,
+            HttpStatusCode::PayloadTooLarge => 413,
+            HttpStatusCode::UriTooLong => 414,
+            HttpStatusCode::UnsupportedMediaType => 415,
+            HttpStatusCode::RangeNotSatisfiable => 416,
+            HttpStatusCode::ExpectationFailed => 417,
+            HttpStatusCode::ImATeapot => 418,
+            HttpStatusCode::MisdirectedRequest => 421,
+            HttpStatusCode::UnprocessableEntity => 422,
+            HttpStatusCode::Locked => 423,
+            HttpStatusCode::FailedDependency => 424,
+            HttpStatusCode::TooEarly => 425,
+            HttpStatusCode::UpgradeRequired => 426,
+            HttpStatusCode::PreconditionRequired => 428,
+            HttpStatusCode::TooManyRequests => 429,
+            HttpStatusCode::RequestHeaderFieldsTooLarge => 431,
+            HttpStatusCode::UnavailableForLegalReasons => 451,
+            HttpStatusCode::InternalServerError => 500,
+            HttpStatusCode::NotImplemented => 501,
+            HttpStatusCode::BadGateway => 502,
+            HttpStatusCode::ServiceUnavailable => 503,
+            HttpStatusCode::GatewayTimeout => 504,
+            HttpStatusCode::HttpVersionNotSupported => 505,
+            HttpStatusCode::VariantAlsoNegotiates => 506,
+            HttpStatusCode::InsufficientStorage => 507,
+            HttpStatusCode::LoopDetected => 508,
+            HttpStatusCode::NotExtended => 510,
+            HttpStatusCode::NetworkAuthenticationRequired => 511,
         }
     }
 }
@@ -229,5 +324,12 @@ impl fmt::Display for HttpStatusCode {
                 HttpStatusCode::NetworkAuthenticationRequired => "Network Authentication Required",
             }
         )
+    }
+}
+
+impl HttpStatusCode {
+    pub fn is_error(self) -> bool {
+        let code: u16 = self.into();
+        (400..600).contains(&code)
     }
 }
