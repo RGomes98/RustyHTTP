@@ -1,7 +1,5 @@
-use crate::modules::{
-    http::{HttpMethod, Request, Response},
-    router::Route,
-};
+use crate::modules::http::{HttpMethod, Request, Response};
+use crate::modules::router::Route;
 
 pub fn core_routes() -> [Route; 2] {
     [

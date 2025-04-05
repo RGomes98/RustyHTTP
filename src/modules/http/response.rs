@@ -1,8 +1,8 @@
 use std::net::TcpStream;
 
 pub struct Response {
-    pub status_code: u16,               //TODO
-    pub headers: Vec<(String, String)>, //TODO
-    pub body: Option<String>,           //TODO
-    pub stream: TcpStream,              //TODO
+    pub status_code: u16,
+    pub headers: Vec<(String, String)>,
+    pub body: Option<String>,
+    pub stream: TcpStream,
 }

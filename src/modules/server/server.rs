@@ -1,4 +1,5 @@
-use crate::modules::{http::HttpServer, utils::Logger};
+use crate::modules::http::HttpServer;
+use crate::modules::utils::Logger;
 
 use std::process;
 
