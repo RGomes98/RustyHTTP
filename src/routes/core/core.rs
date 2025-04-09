@@ -1,7 +1,7 @@
 use crate::modules::http::{HttpMethod, Request, Response};
 use crate::modules::router::Route;
 
-pub fn core_routes() -> [Route; 2] {
+pub fn routes() -> [Route; 2] {
     [
         Route {
             path: "/version",
@@ -21,5 +21,8 @@ fn version(request: Request, response: Option<Response>) {
 }
 
 fn ping(request: Request, response: Option<Response>) {
-    println!("Ping received: [{}] - '{}'", request.method, request.path);
+    println!(
+        "Ping received: [{}] - '{}'",
+        request.request_line.method, request.request_line.path
+    );
 }
