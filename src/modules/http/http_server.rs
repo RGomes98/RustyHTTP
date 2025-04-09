@@ -91,7 +91,9 @@ impl HttpServer {
         let http_request: Vec<&str> = Self::parse_request(&incoming_stream);
         let request: Request = Request::new(http_request)?;
 
-        let identifier: String = Router::get_route_identifier(request.path, &request.method);
+        let identifier: String =
+            Router::get_route_identifier(request.request_line.path, &request.request_line.method);
+
         let route: &Route = Router::get_route_by_identifier(identifier)?;
 
         (route.handler)(request, None);
