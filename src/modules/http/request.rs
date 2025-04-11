@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use std::fmt;
 use std::str::{FromStr, SplitWhitespace};
 
+const HEADER_SPLIT_CHAR: char = ':';
+
 pub enum RequestError {
     MalformedRequestLine(HttpStatusCodeError),
     MalformedHeaders(HttpStatusCodeError),
@@ -99,10 +101,6 @@ impl<'a> Request<'a> {
     }
 
     fn parse_headers(request: &Vec<&'a str>) -> Result<Headers, RequestError> {
-        const HEADER_SPLIT_CHAR: char = ':';
-
-        // Identify the cause of `[ERROR] - Malformed HTTP headers. Expected proper key-value pairs. Encountered unexpected HTTP error: [400] - Bad Request.`
-        // in the first request.
         let headers_map = request
             .iter()
             .skip(1)
@@ -117,7 +115,10 @@ impl<'a> Request<'a> {
             })
             .collect::<Result<HashMap<String, String>, RequestError>>()?;
 
-        // TODO: improve error handling "host is missing, connection...", make some headers an 'Option<T>'.
+        // TODO:
+        // Identify the cause of `[ERROR] - Malformed HTTP headers. Expected proper key-value pairs. Encountered unexpected HTTP error: [400] - Bad Request.`
+        // in the first request.
+        // Improve error handling "host is missing, connection...", make some headers an 'Option<T>'.
         // use 'match' instead??
         let (host, connection, cache_control, user_agent): (&String, &String, &String, &String) = (
             headers_map
