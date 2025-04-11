@@ -12,7 +12,7 @@ static ROUTE_MAP: OnceLock<HashMap<String, Route>> = OnceLock::new();
 pub struct Route {
     pub path: &'static str,
     pub method: HttpMethod,
-    pub handler: fn(Request, Option<Response>),
+    pub handler: fn(Request, Response),
 }
 
 pub enum RouterError {
@@ -73,7 +73,7 @@ impl Router {
         }
     }
 
-    pub fn get_route_identifier(path: &str, method: &HttpMethod) -> String {
+    pub fn get_identifier(path: &str, method: &HttpMethod) -> String {
         format!("[{method}] - '{path}'")
     }
 
@@ -81,7 +81,7 @@ impl Router {
         let mut route_map: HashMap<String, Route> = HashMap::new();
 
         routes.into_iter().for_each(|route| {
-            let idenfitier: String = Self::get_route_identifier(route.path, &route.method);
+            let idenfitier: String = Self::get_identifier(route.path, &route.method);
 
             match route_map.get(&idenfitier) {
                 Some(_) => {

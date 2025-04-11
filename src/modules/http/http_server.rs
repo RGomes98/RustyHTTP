@@ -1,4 +1,4 @@
-use crate::modules::http::{Request, RequestError};
+use crate::modules::http::{Request, RequestError, Response};
 use crate::modules::router::{Route, Router, RouterError};
 use crate::modules::server::Config;
 use crate::modules::utils::Logger;
@@ -89,14 +89,17 @@ impl HttpServer {
     fn dispatch_request(stream: &mut TcpStream) -> Result<(), HttpServerError> {
         let incoming_stream: String = Self::parse_stream(stream)?;
         let http_request: Vec<&str> = Self::parse_request(&incoming_stream);
+
         let request: Request = Request::new(http_request)?;
+        let response: Response<'_> = Response::new(stream);
 
-        let identifier: String =
-            Router::get_route_identifier(request.request_line.path, &request.request_line.method);
+        let Request {
+            ref request_line, ..
+        } = request;
 
+        let identifier: String = Router::get_identifier(request_line.path, &request_line.method);
         let route: &Route = Router::get_route_by_identifier(identifier)?;
-
-        (route.handler)(request, None);
+        (route.handler)(request, response);
         Ok(())
     }
 

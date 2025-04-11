@@ -1,4 +1,4 @@
-use crate::modules::http::{HttpMethod, Request, Response};
+use crate::modules::http::{HttpMethod, HttpStatusCode, Request, Response};
 use crate::modules::router::Route;
 
 pub fn routes() -> [Route; 2] {
@@ -16,13 +16,12 @@ pub fn routes() -> [Route; 2] {
     ]
 }
 
-fn version(request: Request, response: Option<Response>) {
+fn version(request: Request, response: Response) {
     println!("Version - [0.1.0]");
+    response.send(HttpStatusCode::Ok);
 }
 
-fn ping(request: Request, response: Option<Response>) {
-    println!(
-        "Ping received: [{}] - '{}'",
-        request.request_line.method, request.request_line.path
-    );
+fn ping(request: Request, response: Response) {
+    println!("Ping received!",);
+    response.send(HttpStatusCode::Ok);
 }
