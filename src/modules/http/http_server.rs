@@ -98,7 +98,7 @@ impl HttpServer {
         } = request;
 
         let identifier: String = Router::get_identifier(request_line.path, &request_line.method);
-        let route: &Route = Router::get_route_by_identifier(identifier)?;
+        let route: &Route = Router::get_route(identifier)?;
         (route.handler)(request, response);
         Ok(())
     }

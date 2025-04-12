@@ -62,7 +62,7 @@ impl Router {
         modules.into_iter().flatten().collect::<Vec<Route>>()
     }
 
-    pub fn get_route_by_identifier(identifier: String) -> Result<&'static Route, RouterError> {
+    pub fn get_route<'a>(identifier: String) -> Result<&'a Route, RouterError> {
         let route_map: &HashMap<String, Route> = Self::get_route_map()?;
 
         match route_map.get(&identifier) {

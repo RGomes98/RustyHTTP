@@ -22,6 +22,6 @@ fn version(request: Request, response: Response) {
 }
 
 fn ping(request: Request, response: Response) {
-    println!("Ping received!",);
+    println!("Pong!");
     response.send(HttpStatusCode::Ok);
 }
