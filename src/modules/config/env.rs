@@ -5,7 +5,7 @@ use std::env;
 pub struct Env;
 impl Env {
     pub fn get_env_var_or_exit(variable_name: &str) -> String {
-        Self::get_env_var(variable_name).unwrap_or_else(|err| {
+        Self::get_env_var(variable_name).unwrap_or_else(|err: String| {
             Logger::error(&format!("Failed to retrieve environment variable: {err}"));
             std::process::exit(1)
         })

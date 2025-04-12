@@ -101,10 +101,10 @@ impl<'a> Request<'a> {
     }
 
     fn parse_headers(request: &Vec<&'a str>) -> Result<Headers, RequestError> {
-        let headers_map = request
+        let headers_map: HashMap<String, String> = request
             .iter()
             .skip(1)
-            .map(|header| {
+            .map(|header: &&str| {
                 let (key, value): (&str, &str) =
                     header
                         .split_once(HEADER_SPLIT_CHAR)

@@ -115,7 +115,7 @@ impl HttpServer {
     fn parse_request(request: &str) -> Vec<&str> {
         request
             .lines()
-            .take_while(|line| !line.trim().is_empty())
+            .take_while(|line: &&str| !line.trim().is_empty())
             .collect::<Vec<&str>>()
     }
 }
