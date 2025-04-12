@@ -37,29 +37,20 @@ impl fmt::Display for RequestError {
 }
 
 pub struct RequestLine<'a> {
-    pub method: HttpMethod,
     pub path: &'a str,
     pub version: String,
-}
-
-pub struct Headers {
-    pub host: String,
-    pub connection: String,
-    pub cache_control: String,
-    pub user_agent: String,
+    pub method: HttpMethod,
 }
 
 pub struct Request<'a> {
     pub request_line: RequestLine<'a>,
-    pub headers: Headers,
-    // pub body: Option<String>, //TODO
-    // pub query_params: HashMap<String, String>, //TODO
+    pub headers: HashMap<String, String>,
 }
 
 impl<'a> Request<'a> {
     pub fn new(request: Vec<&'a str>) -> Result<Self, RequestError> {
         let request_line: RequestLine<'a> = Self::parse_request_line(&request)?;
-        let headers: Headers = Self::parse_headers(&request)?;
+        let headers: HashMap<String, String> = Self::parse_headers(&request)?;
 
         Ok(Self {
             request_line,
@@ -100,8 +91,8 @@ impl<'a> Request<'a> {
         })
     }
 
-    fn parse_headers(request: &Vec<&'a str>) -> Result<Headers, RequestError> {
-        let headers_map: HashMap<String, String> = request
+    fn parse_headers(request: &Vec<&'a str>) -> Result<HashMap<String, String>, RequestError> {
+        let headers: HashMap<String, String> = request
             .iter()
             .skip(1)
             .map(|header: &&str| {
@@ -115,40 +106,6 @@ impl<'a> Request<'a> {
             })
             .collect::<Result<HashMap<String, String>, RequestError>>()?;
 
-        // TODO:
-        // Identify the cause of `[ERROR] - Malformed HTTP headers. Expected proper key-value pairs. Encountered unexpected HTTP error: [400] - Bad Request.`
-        // in the first request.
-        // Improve error handling "host is missing, connection...", make some headers an 'Option<T>'.
-        // use 'match' instead??
-        let (host, connection, cache_control, user_agent): (&String, &String, &String, &String) = (
-            headers_map
-                .get("host")
-                .ok_or(RequestError::MalformedHeaders(
-                    HttpStatusCodeError::FromErrorStatus(HttpStatusCode::BadRequest),
-                ))?,
-            headers_map
-                .get("connection")
-                .ok_or(RequestError::MalformedHeaders(
-                    HttpStatusCodeError::FromErrorStatus(HttpStatusCode::BadRequest),
-                ))?,
-            headers_map
-                .get("cache-control")
-                .ok_or(RequestError::MalformedHeaders(
-                    HttpStatusCodeError::FromErrorStatus(HttpStatusCode::BadRequest),
-                ))?,
-            headers_map
-                .get("user-agent")
-                .ok_or(RequestError::MalformedHeaders(
-                    HttpStatusCodeError::FromErrorStatus(HttpStatusCode::BadRequest),
-                ))?,
-        );
-
-        //Add custom headers???
-        Ok(Headers {
-            host: host.to_string(),
-            connection: connection.to_string(),
-            cache_control: cache_control.to_string(),
-            user_agent: user_agent.to_string(),
-        })
+        Ok(headers)
     }
 }
