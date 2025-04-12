@@ -1,4 +1,4 @@
-use crate::modules::http::HttpStatusCode;
+use crate::modules::http::HttpStatus;
 use crate::modules::utils::Logger;
 
 use std::fmt;
@@ -36,13 +36,13 @@ impl<'a> Response<'a> {
         Self { stream }
     }
 
-    pub fn send(self, status_code: HttpStatusCode) {
-        let code: u16 = status_code.into();
-        let response: String = format!("HTTP/1.1 {code} {status_code}\r\n\r\n");
+    pub fn send(self, http_status: HttpStatus) {
+        let status_code: u16 = http_status.into();
+        let response: String = format!("HTTP/1.1 {status_code} {http_status}\r\n\r\n");
 
         if let Err(err) = self.stream.write_all(response.as_bytes()) {
             Logger::error(&format!("{}", ResponseError::Io(err)));
-            let error_response: String = format!("{}", HttpStatusCode::InternalServerError);
+            let error_response: String = format!("{}", HttpStatus::InternalServerError);
             let _ = self.stream.write_all(error_response.as_bytes());
         }
     }

@@ -1,4 +1,4 @@
-use crate::modules::http::{HttpMethod, HttpMethodError, HttpStatusCode, HttpStatusCodeError};
+use crate::modules::http::{HttpMethod, HttpMethodError, HttpStatus, HttpStatusError};
 
 use std::collections::HashMap;
 use std::fmt;
@@ -7,8 +7,8 @@ use std::str::{FromStr, SplitWhitespace};
 const HEADER_SPLIT_CHAR: char = ':';
 
 pub enum RequestError {
-    MalformedRequestLine(HttpStatusCodeError),
-    MalformedHeaders(HttpStatusCodeError),
+    MalformedRequestLine(HttpStatusError),
+    MalformedHeaders(HttpStatusError),
     InvalidMethod(HttpMethodError),
 }
 
@@ -36,15 +36,15 @@ impl fmt::Display for RequestError {
     }
 }
 
+pub struct Request<'a> {
+    pub request_line: RequestLine<'a>,
+    pub headers: HashMap<String, String>,
+}
+
 pub struct RequestLine<'a> {
     pub path: &'a str,
     pub version: String,
     pub method: HttpMethod,
-}
-
-pub struct Request<'a> {
-    pub request_line: RequestLine<'a>,
-    pub headers: HashMap<String, String>,
 }
 
 impl<'a> Request<'a> {
@@ -62,7 +62,7 @@ impl<'a> Request<'a> {
         let mut request_line: SplitWhitespace<'a> = request
             .first()
             .ok_or(RequestError::MalformedRequestLine(
-                HttpStatusCodeError::from_status(HttpStatusCode::BadRequest),
+                HttpStatusError::from_status(HttpStatus::BadRequest),
             ))?
             .split_whitespace();
 
@@ -70,17 +70,17 @@ impl<'a> Request<'a> {
             request_line
                 .next()
                 .ok_or(RequestError::MalformedRequestLine(
-                    HttpStatusCodeError::from_status(HttpStatusCode::BadRequest),
+                    HttpStatusError::from_status(HttpStatus::BadRequest),
                 ))?,
             request_line
                 .next()
                 .ok_or(RequestError::MalformedRequestLine(
-                    HttpStatusCodeError::from_status(HttpStatusCode::BadRequest),
+                    HttpStatusError::from_status(HttpStatus::BadRequest),
                 ))?,
             request_line
                 .next()
                 .ok_or(RequestError::MalformedRequestLine(
-                    HttpStatusCodeError::from_status(HttpStatusCode::BadRequest),
+                    HttpStatusError::from_status(HttpStatus::BadRequest),
                 ))?,
         );
 
@@ -100,7 +100,7 @@ impl<'a> Request<'a> {
                     header
                         .split_once(HEADER_SPLIT_CHAR)
                         .ok_or(RequestError::MalformedHeaders(
-                            HttpStatusCodeError::FromErrorStatus(HttpStatusCode::BadRequest),
+                            HttpStatusError::FromErrorStatus(HttpStatus::BadRequest),
                         ))?;
                 Ok((key.trim().to_lowercase(), value.trim().to_lowercase()))
             })

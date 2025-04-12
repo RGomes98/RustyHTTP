@@ -1,6 +1,6 @@
+use crate::modules::entry::Config;
 use crate::modules::http::{Request, RequestError, Response};
 use crate::modules::router::{Route, Router, RouterError};
-use crate::modules::server::Config;
 use crate::modules::utils::Logger;
 
 use std::fmt;
@@ -40,13 +40,13 @@ impl fmt::Display for HttpServerError {
     }
 }
 
-pub struct HttpServer {
+pub struct Handler {
     config: Config,
     listener: TcpListener,
 }
 
-impl HttpServer {
-    pub fn new(config: Config) -> Result<HttpServer, Error> {
+impl Handler {
+    pub fn new(config: Config) -> Result<Self, Error> {
         let host: Ipv4Addr = Ipv4Addr::from_str(&config.host).map_err(|_| {
             Error::new(
                 std::io::ErrorKind::InvalidInput,

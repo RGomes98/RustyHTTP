@@ -1,9 +1,9 @@
-use crate::modules::http::{HttpStatusCode, HttpStatusCodeError};
+use crate::modules::http::{HttpStatus, HttpStatusError};
 
 use std::{fmt, str};
 
 pub enum HttpMethodError {
-    Invalid(HttpStatusCodeError),
+    Invalid(HttpStatusError),
 }
 
 impl fmt::Display for HttpMethodError {
@@ -60,8 +60,8 @@ impl str::FromStr for HttpMethod {
             "HEAD" => Ok(HttpMethod::HEAD),
             "OPTIONS" => Ok(HttpMethod::OPTIONS),
             "TRACE" => Ok(HttpMethod::TRACE),
-            _ => Err(HttpMethodError::Invalid(HttpStatusCodeError::from_status(
-                HttpStatusCode::NotImplemented,
+            _ => Err(HttpMethodError::Invalid(HttpStatusError::from_status(
+                HttpStatus::NotImplemented,
             ))),
         }
     }

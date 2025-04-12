@@ -1,4 +1,4 @@
-use crate::modules::http::{HttpMethod, HttpStatusCode, HttpStatusCodeError, Request, Response};
+use crate::modules::http::{HttpMethod, HttpStatus, HttpStatusError, Request, Response};
 use crate::modules::utils::Logger;
 
 use std::collections::HashMap;
@@ -16,8 +16,8 @@ pub struct Route {
 }
 
 pub enum RouterError {
-    NotFound(HttpStatusCodeError),
-    NotInitialized(HttpStatusCodeError),
+    NotFound(HttpStatusError),
+    NotInitialized(HttpStatusError),
 }
 
 impl fmt::Display for RouterError {
@@ -67,8 +67,8 @@ impl Router {
 
         match route_map.get(&identifier) {
             Some(route) => Ok(route),
-            None => Err(RouterError::NotFound(HttpStatusCodeError::from_status(
-                HttpStatusCode::NotFound,
+            None => Err(RouterError::NotFound(HttpStatusError::from_status(
+                HttpStatus::NotFound,
             ))),
         }
     }
@@ -85,7 +85,7 @@ impl Router {
 
             match route_map.get(&idenfitier) {
                 Some(_) => {
-                    Logger::error(&format!("Route {idenfitier} already exists."));
+                    Logger::error(&format!("Route {idenfitier} already registered."));
                     process::exit(1);
                 }
                 None => route_map.insert(idenfitier, route),
@@ -98,9 +98,9 @@ impl Router {
     fn get_route_map() -> Result<&'static HashMap<String, Route>, RouterError> {
         match ROUTE_MAP.get() {
             Some(routes) => Ok(routes),
-            None => Err(RouterError::NotInitialized(
-                HttpStatusCodeError::from_status(HttpStatusCode::InternalServerError),
-            )),
+            None => Err(RouterError::NotInitialized(HttpStatusError::from_status(
+                HttpStatus::InternalServerError,
+            ))),
         }
     }
 }

@@ -1,7 +1,7 @@
-pub mod http_method;
-pub mod http_server;
-pub mod http_status_codes;
+pub mod handler;
+pub mod method;
 pub mod request;
 pub mod response;
+pub mod status;
 
-pub use self::{http_method::*, http_server::*, http_status_codes::*, request::*, response::*};
+pub use self::{handler::*, method::*, request::*, response::*, status::*};

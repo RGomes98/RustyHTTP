@@ -1,4 +1,4 @@
-use crate::modules::http::HttpServer;
+use crate::modules::http::Handler;
 use crate::modules::utils::Logger;
 
 use std::process;
@@ -8,11 +8,11 @@ pub struct Config {
     pub host: String,
 }
 
-pub struct Server;
+pub struct App;
 
-impl Server {
+impl App {
     pub fn new(config: Config) -> Self {
-        match HttpServer::new(config) {
+        match Handler::new(config) {
             Ok(server) => {
                 Logger::info(&format!("Server is now listening on {}.", server.address()));
                 server.handle_connection();
