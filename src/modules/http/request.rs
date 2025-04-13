@@ -58,6 +58,13 @@ impl<'a> Request<'a> {
         })
     }
 
+    pub fn parse_http_request(request: &str) -> Vec<&str> {
+        request
+            .lines()
+            .take_while(|line: &&str| !line.trim().is_empty())
+            .collect::<Vec<&str>>()
+    }
+
     fn parse_request_line(request: &Vec<&'a str>) -> Result<RequestLine<'a>, RequestError> {
         let mut request_line: SplitWhitespace<'a> = request
             .first()
