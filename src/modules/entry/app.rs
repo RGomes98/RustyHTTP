@@ -12,7 +12,7 @@ pub enum ConfigError {
 }
 
 impl fmt::Display for ConfigError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let m: String = match self {
             ConfigError::Host(err) => {
                 format!("Failed to parse the 'HOST' environment variable: {err}")

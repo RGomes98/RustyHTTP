@@ -19,7 +19,7 @@ impl From<HttpMethodError> for RequestError {
 }
 
 impl fmt::Display for RequestError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let m: String = match self {
             RequestError::MalformedRequestLine(err) => {
                 format!("Malformed HTTP request line. Expected 'METHOD PATH HTTP/VERSION'. {err}")

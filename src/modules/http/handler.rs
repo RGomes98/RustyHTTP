@@ -43,7 +43,7 @@ impl From<RequestError> for HandlerError {
 }
 
 impl fmt::Display for HandlerError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let m: String = match self {
             HandlerError::Router(err) => format!("{err}"),
             HandlerError::Request(err) => format!("{err}"),
@@ -99,15 +99,15 @@ impl Handler {
     }
 
     fn process_request(stream: &mut TcpStream) -> Result<(), HandlerError> {
-        let incoming_stream: String = Self::read_http_request_raw(stream)?;
-        let http_request: Vec<&str> = Request::parse_http_request(&incoming_stream);
-        let request: Request = Request::new(http_request)?;
-        let response: Response<'_> = Response::new(stream);
+        let raw_request: String = Self::read_http_request_raw(stream)?;
+        let request_lines: Vec<&str> = Request::parse_http_request(&raw_request);
+        let request: Request = Request::new(request_lines)?;
+        let response: Response = Response::new(stream);
         Self::dispatch_to_route(request, response)?;
         Ok(())
     }
 
-    fn dispatch_to_route(request: Request<'_>, response: Response<'_>) -> Result<(), HandlerError> {
+    fn dispatch_to_route(request: Request, response: Response) -> Result<(), HandlerError> {
         let Request { request_line, .. } = &request;
         let identifier: String = Router::get_identifier(request_line.path, &request_line.method);
         let route: &Route = Router::get_route(identifier)?;

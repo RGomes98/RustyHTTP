@@ -14,7 +14,7 @@ pub struct Response<'a> {
 }
 
 impl fmt::Display for ResponseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let m: String = match self {
             ResponseError::Io(err) => {
                 format!("I/O error while writing HTTP response to client: {err}.")

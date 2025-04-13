@@ -7,7 +7,7 @@ pub enum HttpMethodError {
 }
 
 impl fmt::Display for HttpMethodError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let m: String = match self {
             HttpMethodError::Invalid(err) => {
                 format!("Unexpected HTTP method. {err}")
@@ -31,7 +31,7 @@ pub enum HttpMethod {
 }
 
 impl fmt::Display for HttpMethod {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let m: &str = match self {
             HttpMethod::GET => "GET",
             HttpMethod::POST => "POST",

@@ -7,7 +7,7 @@ pub enum HttpStatusError {
 }
 
 impl fmt::Display for HttpStatusError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let (label, http_status): (&str, &HttpStatus) = match self {
             HttpStatusError::UnknownStatusCode(http_status) => {
                 ("Unrecognized HTTP status code", http_status)
@@ -254,7 +254,7 @@ impl From<HttpStatus> for u16 {
 }
 
 impl fmt::Display for HttpStatus {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let m: &str = match self {
             HttpStatus::Continue => "Continue",
             HttpStatus::SwitchingProtocols => "Switching Protocols",

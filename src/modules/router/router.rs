@@ -21,7 +21,7 @@ pub enum RouterError {
 }
 
 impl fmt::Display for RouterError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let m: String = match self {
             RouterError::NotFound(err) => {
                 format!("No route matched the request. {err}")
