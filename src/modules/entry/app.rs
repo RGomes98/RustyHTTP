@@ -1,34 +1,12 @@
 use crate::modules::http::Handler;
 use crate::modules::utils::Logger;
 
-use std::fmt;
-use std::net::AddrParseError;
-use std::num::ParseIntError;
+use std::net::Ipv4Addr;
 use std::process;
 
-pub enum ConfigError {
-    Port(ParseIntError),
-    Host(AddrParseError),
-}
-
-impl fmt::Display for ConfigError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let m: String = match self {
-            ConfigError::Host(err) => {
-                format!("Failed to parse the 'HOST' environment variable: {err}")
-            }
-            ConfigError::Port(err) => {
-                format!("Failed to parse the 'PORT' environment variable: {err}")
-            }
-        };
-
-        write!(f, "{m}")
-    }
-}
-
 pub struct Config {
-    pub port: String,
-    pub host: String,
+    pub port: u16,
+    pub host: Ipv4Addr,
 }
 
 pub struct App;

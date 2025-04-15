@@ -1,19 +1,16 @@
-use crate::modules::entry::{Config, ConfigError};
+use crate::modules::entry::Config;
 use crate::modules::http::{HttpStatus, Request, RequestError, Response};
 use crate::modules::router::{Route, Router, RouterError};
 use crate::modules::utils::Logger;
 
 use std::fmt;
 use std::io::{Error, Read};
-use std::net::{AddrParseError, Ipv4Addr, SocketAddr, TcpListener, TcpStream};
-use std::num::ParseIntError;
-use std::str::FromStr;
+use std::net::{SocketAddr, TcpListener, TcpStream};
 
 const BUFFER_SIZE: usize = 4096;
 
 pub enum HandlerError {
     Io(Error),
-    Config(ConfigError),
     Router(RouterError),
     Request(RequestError),
 }
@@ -21,12 +18,6 @@ pub enum HandlerError {
 impl From<Error> for HandlerError {
     fn from(err: Error) -> Self {
         HandlerError::Io(err)
-    }
-}
-
-impl From<ConfigError> for HandlerError {
-    fn from(err: ConfigError) -> Self {
-        HandlerError::Config(err)
     }
 }
 
@@ -48,7 +39,6 @@ impl fmt::Display for HandlerError {
             HandlerError::Router(err) => format!("{err}"),
             HandlerError::Request(err) => format!("{err}"),
             HandlerError::Io(err) => format!("Stream I/O error: {err}."),
-            HandlerError::Config(err) => format!("Failed to initialize handler. {err}."),
         };
 
         write!(f, "{m}")
@@ -62,13 +52,7 @@ pub struct Handler {
 
 impl Handler {
     pub fn new(config: Config) -> Result<Self, HandlerError> {
-        let host: Ipv4Addr = Ipv4Addr::from_str(&config.host)
-            .map_err(|err: AddrParseError| HandlerError::Config(ConfigError::Host(err)))?;
-
-        let port: u16 = u16::from_str(&config.port)
-            .map_err(|err: ParseIntError| HandlerError::Config(ConfigError::Port(err)))?;
-
-        let address: SocketAddr = SocketAddr::from((host, port));
+        let address: SocketAddr = SocketAddr::from((config.host, config.port));
         let listener: TcpListener = TcpListener::bind(address)?;
         Ok(Self { config, listener })
     }
