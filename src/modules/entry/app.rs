@@ -7,6 +7,7 @@ use std::process;
 pub struct Config {
     pub port: u16,
     pub host: Ipv4Addr,
+    pub pool_size: usize,
 }
 
 pub struct App;

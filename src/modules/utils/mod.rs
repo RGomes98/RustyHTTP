@@ -1,2 +1,4 @@
 pub mod logger;
-pub use self::logger::*;
+pub mod thread_pool;
+
+pub use self::{logger::*, thread_pool::*};

@@ -2,6 +2,7 @@ use crate::modules::entry::Config;
 use crate::modules::http::{HttpStatus, Request, RequestError, Response};
 use crate::modules::router::{Route, Router, RouterError};
 use crate::modules::utils::Logger;
+use crate::modules::utils::ThreadPool;
 
 use std::fmt;
 use std::io::{Error, Read};
@@ -63,10 +64,12 @@ impl Handler {
     }
 
     pub fn listen(&self) {
+        let pool: ThreadPool = ThreadPool::new(self.config.pool_size);
+
         for stream in self.listener.incoming() {
             match stream {
                 Ok(mut stream) => {
-                    Self::process_stream(&mut stream);
+                    pool.schedule(move || Self::process_stream(&mut stream));
                 }
                 Err(err) => {
                     Logger::error(&format!("Failed to accept incoming TCP connection: {err}"));
