@@ -15,23 +15,28 @@ impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<Receiver<Job>>>) -> Self {
         let thread: thread::JoinHandle<()> = thread::spawn(move || {
             loop {
-                match receiver.lock() {
+                let job_result: Result<Job, ()> = match receiver.lock() {
                     Ok(receiver) => match receiver.recv() {
                         Ok(job) => {
                             Logger::info(&format!("Worker {id} picked up a new job."));
-                            job();
+                            Ok(job)
                         }
                         Err(err) => {
-                            Logger::error(&format!("Worker {id} encountered an error: {err}."));
-                            Logger::warn(&format!("Worker {id} shutting down."));
-                            break;
+                            Logger::error(&format!("Worker {id} failed to receive job: {err}."));
+                            Err(())
                         }
                     },
                     Err(err) => {
                         Logger::error(&format!("Worker {id} failed to lock receiver: {err}."));
-                        Logger::warn(&format!("Worker {id} shutting down."));
-                        break;
+                        Err(())
                     }
+                };
+
+                if let Ok(job) = job_result {
+                    job()
+                } else {
+                    Logger::warn(&format!("Worker {id} shutting down."));
+                    break;
                 }
             }
         });
