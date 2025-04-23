@@ -1,7 +1,6 @@
 use crate::modules::utils::Logger;
 
-use std::process;
-use std::sync::mpsc::{Receiver, Sender, channel};
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -9,56 +8,74 @@ type Job = Box<dyn FnOnce() + Send + 'static>;
 
 struct Worker {
     id: usize,
-    thread: thread::JoinHandle<()>,
+    thread: Option<thread::JoinHandle<()>>,
 }
 
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<Receiver<Job>>>) -> Self {
         let thread: thread::JoinHandle<()> = thread::spawn(move || {
             loop {
-                let job: Job = receiver
-                    .lock()
-                    .expect("Worker failed to lock receiver.")
-                    .recv()
-                    .expect("Worker failed to receive job.");
-                Logger::debug(&format!("Worker {id} picked up a new job."));
-                job();
+                match receiver.lock() {
+                    Ok(receiver) => match receiver.recv() {
+                        Ok(job) => {
+                            Logger::info(&format!("Worker {id} picked up a new job."));
+                            job();
+                        }
+                        Err(err) => {
+                            Logger::error(&format!("Worker {id} encountered an error: {err}."));
+                            Logger::warn(&format!("Worker {id} shutting down."));
+                            break;
+                        }
+                    },
+                    Err(err) => {
+                        Logger::error(&format!("Worker {id} failed to lock receiver: {err}."));
+                        Logger::warn(&format!("Worker {id} shutting down."));
+                        break;
+                    }
+                }
             }
         });
 
-        Self { id, thread }
+        Self {
+            id,
+            thread: Some(thread),
+        }
     }
 }
 
 pub struct ThreadPool {
-    sender: Sender<Job>,
     workers: Vec<Worker>,
+    sender: Option<Sender<Job>>,
 }
 
 impl ThreadPool {
     pub fn new(size: usize) -> Self {
-        if size < 1 {
-            Logger::error("Failed to initialize thread pool: size must be greater than zero.");
-            process::exit(1);
-        }
+        assert!(size > 0);
 
-        let (sender, receiver): (Sender<Job>, Receiver<Job>) = channel();
+        let (sender, receiver): (Sender<Job>, Receiver<Job>) = mpsc::channel();
         let receiver: Arc<Mutex<Receiver<Job>>> = Arc::new(Mutex::new(receiver));
 
         let workers: Vec<Worker> = (0..size)
             .map(|id: usize| Worker::new(id, Arc::clone(&receiver)))
             .collect::<Vec<Worker>>();
 
-        Self { workers, sender }
+        Self {
+            workers,
+            sender: Some(sender),
+        }
     }
 
-    pub fn schedule<T>(&self, job: T)
+    pub fn schedule<F>(&self, job: F)
     where
-        T: FnOnce() + Send + 'static,
+        F: FnOnce() + Send + 'static,
     {
-        let job: Box<T> = Box::new(job);
-        self.sender
-            .send(job)
-            .expect("Failed to send job to worker thread.");
+        let Some(sender) = &self.sender else {
+            Logger::warn("No sender available; job could not be dispatched.");
+            return;
+        };
+
+        if let Err(err) = sender.send(Box::new(job)) {
+            Logger::error(&format!("Failed to dispatch job to worker: {err}."));
+        }
     }
 }
