@@ -79,3 +79,20 @@ impl ThreadPool {
         }
     }
 }
+
+impl Drop for ThreadPool {
+    fn drop(&mut self) {
+        drop(self.sender.take());
+
+        for Worker { id, thread } in &mut self.workers {
+            let Some(thread) = thread.take() else {
+                Logger::warn(&format!("No thread found for worker {id} during shutdown."));
+                continue;
+            };
+
+            if let Err(err) = thread.join() {
+                Logger::error(&format!("Worker {id} panicked during shutdown: {err:?}."));
+            }
+        }
+    }
+}
