@@ -5,10 +5,8 @@ use crate::modules::utils::Logger;
 use crate::modules::utils::ThreadPool;
 
 use std::fmt;
-use std::io::{Error, Read};
+use std::io::Error;
 use std::net::{SocketAddr, TcpListener, TcpStream};
-
-const BUFFER_SIZE: usize = 4096;
 
 pub enum HandlerError {
     Io(Error),
@@ -86,9 +84,9 @@ impl Handler {
     }
 
     fn process_request(stream: &mut TcpStream) -> Result<(), HandlerError> {
-        let raw_request: String = Self::read_http_request_raw(stream)?;
+        let raw_request: String = Request::read_http_request_raw(stream)?;
         let request_lines: Vec<&str> = Request::parse_http_request(&raw_request);
-        let request: Request = Request::new(request_lines)?;
+        let request: Request = Request::new(&request_lines)?;
         let response: Response = Response::new(stream);
         Self::dispatch_to_route(request, response)?;
         Ok(())
@@ -100,14 +98,5 @@ impl Handler {
         let route: &Route = Router::get_route(identifier)?;
         (route.handler)(request, response);
         Ok(())
-    }
-
-    fn read_http_request_raw(stream: &mut TcpStream) -> Result<String, HandlerError> {
-        let mut buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
-
-        match stream.read(&mut buffer) {
-            Ok(size) => Ok(String::from_utf8_lossy(&buffer[..size]).to_string()),
-            Err(err) => Err(HandlerError::Io(err)),
-        }
     }
 }

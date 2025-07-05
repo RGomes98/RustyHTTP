@@ -35,8 +35,8 @@ fn ping(request: Request, response: Response) {
 }
 
 fn delay(request: Request, response: Response) {
-    println!("Processing with 5 seconds delay...");
-    thread::sleep(Duration::from_secs(5));
+    println!("Processing with 30 seconds delay...");
+    thread::sleep(Duration::from_secs(30));
     println!("Request processing completed.");
     response.send(HttpStatus::Ok);
 }

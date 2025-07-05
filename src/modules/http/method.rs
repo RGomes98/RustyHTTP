@@ -2,6 +2,7 @@ use crate::modules::http::{HttpStatus, HttpStatusError};
 
 use std::{fmt, str};
 
+#[derive(Debug)]
 pub enum HttpMethodError {
     Invalid(HttpStatusError),
 }
