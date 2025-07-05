@@ -1,6 +1,6 @@
 use crate::modules::utils::Logger;
 
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{self, Receiver, RecvError, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -23,7 +23,7 @@ impl Worker {
                         Logger::error(&format!("Worker {id} failed to lock receiver: {err}"));
                     })
                     .and_then(|receiver: ReceiverGuard| {
-                        receiver.recv().map_err(|err| {
+                        receiver.recv().map_err(|err: RecvError| {
                             Logger::error(&format!("Worker {id} failed to receive job: {err}"));
                         })
                     });
@@ -52,7 +52,7 @@ pub struct ThreadPool {
 
 impl ThreadPool {
     pub fn new(size: usize) -> Self {
-        assert!(size > 0, "'POOL_SIZE' size must be greater than 0");
+        assert!(size > 0, "'POOL_SIZE' must be greater than 0");
 
         let (sender, receiver): (Sender<Job>, Receiver<Job>) = mpsc::channel();
         let receiver: Arc<Mutex<Receiver<Job>>> = Arc::new(Mutex::new(receiver));
