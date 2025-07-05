@@ -5,6 +5,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
+type ReceiverGuard<'a> = std::sync::MutexGuard<'a, std::sync::mpsc::Receiver<Job>>;
+type ReceiverPoisonError<'a> = std::sync::PoisonError<ReceiverGuard<'a>>;
 
 struct Worker {
     id: usize,
@@ -15,25 +17,20 @@ impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<Receiver<Job>>>) -> Self {
         let thread: thread::JoinHandle<()> = thread::spawn(move || {
             loop {
-                let job_result: Result<Job, ()> = match receiver.lock() {
-                    Ok(receiver) => match receiver.recv() {
-                        Ok(job) => {
-                            Logger::info(&format!("Worker {id} picked up a new job."));
-                            Ok(job)
-                        }
-                        Err(err) => {
-                            Logger::error(&format!("Worker {id} failed to receive job: {err}."));
-                            Err(())
-                        }
-                    },
-                    Err(err) => {
-                        Logger::error(&format!("Worker {id} failed to lock receiver: {err}."));
-                        Err(())
-                    }
-                };
+                let job_result: Result<Job, ()> = receiver
+                    .lock()
+                    .map_err(|err: ReceiverPoisonError| {
+                        Logger::error(&format!("Worker {id} failed to lock receiver: {err}"));
+                    })
+                    .and_then(|receiver: ReceiverGuard| {
+                        receiver.recv().map_err(|err| {
+                            Logger::error(&format!("Worker {id} failed to receive job: {err}"));
+                        })
+                    });
 
                 if let Ok(job) = job_result {
-                    job()
+                    Logger::info(&format!("Worker {id} picked up a new job."));
+                    job();
                 } else {
                     Logger::warn(&format!("Worker {id} shutting down."));
                     break;
@@ -55,7 +52,7 @@ pub struct ThreadPool {
 
 impl ThreadPool {
     pub fn new(size: usize) -> Self {
-        assert!(size > 0);
+        assert!(size > 0, "'POOL_SIZE' size must be greater than 0");
 
         let (sender, receiver): (Sender<Job>, Receiver<Job>) = mpsc::channel();
         let receiver: Arc<Mutex<Receiver<Job>>> = Arc::new(Mutex::new(receiver));
