@@ -1,7 +1,18 @@
 [package]
-name = "rusty-http"
+name = "rusty_http_server"
 version = "0.1.0"
 edition = "2024"
 
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
 [dependencies]
-chrono = "0.4.40"
+rusty_config = { path = "crates/rusty_config" }
+rusty_http   = { path = "crates/rusty_http" }
+rusty_router = { path = "crates/rusty_router" }
+rusty_server = { path = "crates/rusty_server" }
+rusty_utils  = { path = "crates/rusty_utils" }
+
+tracing = { version = "=0.1.44"}
+tracing-subscriber = { version = "=0.3.22", features = ["env-filter"]}

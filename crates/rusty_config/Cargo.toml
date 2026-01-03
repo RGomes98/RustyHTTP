@@ -1,5 +1,5 @@
 [package]
-name = "config"
+name = "rusty_config"
 version = "0.1.0"
 edition = "2024"
 
@@ -7,3 +7,4 @@ edition = "2024"
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.17"
 toml = "0.9.8"
+tracing = { version = "=0.1.44"}
