@@ -137,6 +137,7 @@ name = "rusty_http"
 version = "0.1.0"
 dependencies = [
  "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -173,6 +174,9 @@ dependencies = [
 [[package]]
 name = "rusty_utils"
 version = "0.1.0"
+dependencies = [
+ "tracing",
+]
 
 [[package]]
 name = "serde"
