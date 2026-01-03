@@ -18,7 +18,7 @@ impl<'a> Response<'a> {
         let status_code: u16 = status.into();
 
         debug!("Sending HTTP response: {status_code} {status}");
-        let response: String = format!("HTTP/1.1 {} {}\r\n\r\n", status_code, status);
+        let response: String = format!("HTTP/1.1 {status_code} {status}\r\n\r\n");
 
         self.stream.write_all(response.as_bytes()).map_err(|e: Error| {
             error!("Failed to write response bytes to stream: {e}");

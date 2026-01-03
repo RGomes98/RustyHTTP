@@ -276,6 +276,6 @@ impl fmt::Display for HttpStatus {
             HttpStatus::NetworkAuthenticationRequired => "Network Authentication Required",
         };
 
-        write!(f, "{}", msg)
+        write!(f, "{msg}")
     }
 }

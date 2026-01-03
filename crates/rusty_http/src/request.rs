@@ -7,8 +7,8 @@ use super::HttpMethod;
 
 use tracing::{debug, trace, warn};
 
-pub type RequestLine<'a> = (&'a str, &'a str, HttpMethod);
-pub type Headers<'a> = HashMap<Cow<'a, str>, Cow<'a, str>>;
+type RequestLine<'a> = (&'a str, &'a str, HttpMethod);
+type Headers<'a> = HashMap<Cow<'a, str>, Cow<'a, str>>;
 
 const HEADERS_SEPARATOR: char = ':';
 
