@@ -20,14 +20,12 @@ impl<'a> Response<'a> {
         debug!("Sending HTTP response: {status_code} {status}");
         let response: String = format!("HTTP/1.1 {status_code} {status}\r\n\r\n");
 
-        self.stream.write_all(response.as_bytes()).map_err(|e: Error| {
+        self.stream.write_all(response.as_bytes()).inspect_err(|e: &Error| {
             error!("Failed to write response bytes to stream: {e}");
-            HttpError::from(e)
         })?;
 
-        self.stream.flush().map_err(|e: Error| {
+        self.stream.flush().inspect_err(|e: &Error| {
             error!("Failed to flush response stream: {e}");
-            HttpError::from(e)
         })?;
 
         Ok(())

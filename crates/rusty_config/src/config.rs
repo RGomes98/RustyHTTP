@@ -38,14 +38,12 @@ impl Config {
         let p: &Path = path.as_ref();
         debug!("Attempting to read configuration file");
 
-        let content: String = fs::read_to_string(p).map_err(|e: std::io::Error| {
+        let content: String = fs::read_to_string(p).inspect_err(|_| {
             warn!("Configuration file not found or unreadable: {p:?}");
-            ConfigError::Io(e)
         })?;
 
-        let config: T = toml::from_str(&content).map_err(|e: toml::de::Error| {
+        let config: T = toml::from_str(&content).inspect_err(|_| {
             warn!("Invalid syntax in TOML configuration file: {p:?}");
-            ConfigError::TomlParse(e)
         })?;
 
         debug!("Configuration file '{p:?}' loaded successfully");
