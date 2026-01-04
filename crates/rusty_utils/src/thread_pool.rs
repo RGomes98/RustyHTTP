@@ -5,8 +5,9 @@ use std::thread;
 use tracing::{error, info, warn};
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
+type SharedReceiver = Arc<Mutex<Receiver<Job>>>;
 type ReceiverGuard<'a> = std::sync::MutexGuard<'a, std::sync::mpsc::Receiver<Job>>;
-type ReceiverPoisonError<'a> = std::sync::PoisonError<ReceiverGuard<'a>>;
+type PoisonError<'a> = std::sync::PoisonError<ReceiverGuard<'a>>;
 
 struct Worker {
     id: usize,
@@ -14,32 +15,32 @@ struct Worker {
 }
 
 impl Worker {
-    fn new(id: usize, receiver: Arc<Mutex<Receiver<Job>>>) -> Self {
+    fn new(id: usize, receiver: SharedReceiver) -> Self {
         let thread: thread::JoinHandle<()> = thread::spawn(move || {
-            loop {
-                let job_result: Result<Job, ()> = receiver
-                    .lock()
-                    .map_err(|e: ReceiverPoisonError| error!("Worker {id} failed to lock receiver: {e}"))
-                    .and_then(|receiver: ReceiverGuard| {
-                        receiver
-                            .recv()
-                            .map_err(|e: RecvError| warn!("Worker {id} disconnected from pool: {e}"))
-                    });
-
-                if let Ok(job) = job_result {
-                    info!("Worker {id} picked up a new job");
-                    job();
-                } else {
-                    warn!("Worker {id} shutting down");
-                    break;
-                }
+            while let Some(job) = Self::fetch_job(id, &receiver) {
+                info!("Worker {id} got a job");
+                job();
             }
+
+            info!("Worker {id} finished");
         });
 
         Self {
             id,
             thread: Some(thread),
         }
+    }
+
+    fn fetch_job(id: usize, receiver: &SharedReceiver) -> Option<Job> {
+        let guard: ReceiverGuard = receiver
+            .lock()
+            .inspect_err(|e: &PoisonError| error!("Worker {id} poison error: {e}"))
+            .ok()?;
+
+        guard
+            .recv()
+            .inspect_err(|e: &RecvError| warn!("Worker {id} recv error: {e}"))
+            .ok()
     }
 }
 
@@ -56,9 +57,10 @@ impl ThreadPool {
         let (sender, receiver): (Sender<Job>, Receiver<Job>) = mpsc::channel();
         let receiver: Arc<Mutex<Receiver<Job>>> = Arc::new(Mutex::new(receiver));
 
-        let workers: Vec<Worker> = (0..size)
-            .map(|id: usize| Worker::new(id, Arc::clone(&receiver)))
-            .collect::<Vec<Worker>>();
+        let mut workers: Vec<Worker> = Vec::with_capacity(size);
+        for id in 0..size {
+            workers.push(Worker::new(id, Arc::clone(&receiver)));
+        }
 
         Self {
             workers,
