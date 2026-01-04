@@ -170,6 +170,7 @@ dependencies = [
  "rusty_router",
  "rusty_utils",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]
