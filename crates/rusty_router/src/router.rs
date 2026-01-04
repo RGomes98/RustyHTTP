@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
 use super::RouterError;
+use crate::method_impl;
 use rusty_http::{HttpMethod, Request, Response};
-use tracing::{debug, error, trace, warn};
+use tracing::{debug, trace, warn};
 
 type Path = &'static str;
 type RouteMap = HashMap<Path, Route>;
@@ -11,7 +12,7 @@ type Routes = HashMap<HttpMethod, RouteMap>; // TODO: Refactor to support dynami
 pub struct Route {
     pub path: Path,
     pub method: HttpMethod,
-    pub handler: Box<dyn Fn(Request, Response)>,
+    pub handler: Box<dyn Fn(Request, Response) + Send + Sync>,
 }
 
 pub struct Router {
@@ -30,6 +31,18 @@ impl Router {
         Self { routes: HashMap::new() }
     }
 
+    pub fn register<F>(&mut self, method: HttpMethod, path: &'static str, handler: F)
+    where
+        F: Fn(Request, Response) + Send + Sync + 'static,
+    {
+        self.add_route(Route {
+            path,
+            method,
+            handler: Box::new(handler),
+        })
+        .expect("Fatal error registering route");
+    }
+
     pub fn get_route(&self, path: &str, method: &HttpMethod) -> Option<&Route> {
         trace!("Looking up route for {method} {path}");
 
@@ -45,7 +58,23 @@ impl Router {
         route
     }
 
-    pub fn try_add_route(&mut self, route: Route) -> Result<(), RouterError> {
+    method_impl!(get, HttpMethod::GET);
+
+    method_impl!(post, HttpMethod::POST);
+
+    method_impl!(put, HttpMethod::PUT);
+
+    method_impl!(delete, HttpMethod::DELETE);
+
+    method_impl!(patch, HttpMethod::PATCH);
+
+    method_impl!(head, HttpMethod::HEAD);
+
+    method_impl!(options, HttpMethod::OPTIONS);
+
+    method_impl!(trace, HttpMethod::TRACE);
+
+    fn add_route(&mut self, route: Route) -> Result<(), RouterError> {
         let route_map: &mut RouteMap = self.routes.entry(route.method).or_default();
 
         if route_map.contains_key(&route.path) {
@@ -56,13 +85,6 @@ impl Router {
         debug!("Registered route: {}", Self::fmt_route(&route.method, route.path,));
         route_map.insert(route.path, route);
         Ok(())
-    }
-
-    pub fn add_route(&mut self, route: Route) {
-        self.try_add_route(route).unwrap_or_else(|e: RouterError| {
-            error!("Fatal error: Failed to register route: {e}");
-            panic!("Fatal error registering route: {e}")
-        });
     }
 
     fn fmt_route(method: &HttpMethod, path: &str) -> String {
