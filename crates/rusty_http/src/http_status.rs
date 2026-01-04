@@ -211,7 +211,7 @@ impl TryFrom<u16> for HttpStatus {
 
 impl fmt::Display for HttpStatus {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let msg: &str = match self {
+        let msg: &'static str = match self {
             HttpStatus::Continue => "Continue",
             HttpStatus::SwitchingProtocols => "Switching Protocols",
             HttpStatus::Processing => "Processing",

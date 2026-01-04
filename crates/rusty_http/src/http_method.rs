@@ -17,7 +17,7 @@ pub enum HttpMethod {
 
 impl fmt::Display for HttpMethod {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let msg: &str = match self {
+        let msg: &'static str = match self {
             HttpMethod::GET => "GET",
             HttpMethod::POST => "POST",
             HttpMethod::PUT => "PUT",

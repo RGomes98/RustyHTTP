@@ -9,7 +9,7 @@ use tracing::{debug, warn};
 
 pub struct Config;
 impl Config {
-    pub fn from_env<T>(key: &str) -> Result<T, ConfigError>
+    pub fn from_env<T>(key: &'static str) -> Result<T, ConfigError>
     where
         T: FromStr,
         T::Err: std::error::Error + 'static,

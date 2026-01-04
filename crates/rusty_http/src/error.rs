@@ -13,7 +13,7 @@ pub enum HttpError {
     #[error("Invalid Method: '{0}'. Supported methods: GET, POST, PUT, DELETE, PATCH...")]
     InvalidMethod(String),
 
-    #[error("Unknown Status Code: {0}. Expected integer between 100 and 599.")]
+    #[error("Unknown Status Code: {0}. Expected integer between 100 and 599")]
     UnknownStatusCode(u16),
 
     #[error("Early response triggered with status code: {0}")]
