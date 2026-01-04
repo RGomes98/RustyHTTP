@@ -2,7 +2,7 @@ use std::sync::mpsc::{self, Receiver, RecvError, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
 type SharedReceiver = Arc<Mutex<Receiver<Job>>>;
@@ -18,11 +18,11 @@ impl Worker {
     fn new(id: usize, receiver: SharedReceiver) -> Self {
         let thread: thread::JoinHandle<()> = thread::spawn(move || {
             while let Some(job) = Self::fetch_job(id, &receiver) {
-                info!("Worker {id} got a job");
+                debug!("Worker {id} got a job");
                 job();
             }
 
-            info!("Worker {id} finished");
+            debug!("Worker {id} finished");
         });
 
         Self {

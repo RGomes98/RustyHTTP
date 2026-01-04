@@ -1,19 +1,35 @@
-mod modules;
-mod routes;
+use std::{net::Ipv4Addr, process};
 
-use modules::config::Env;
-use modules::entry::{App, Config};
-use modules::router::Router;
-
-use routes::core;
+use rusty_config::Config;
+use rusty_http::{HttpStatus, Request, Response};
+use rusty_router::Router;
+use rusty_server::{Server, ServerConfig};
+use rusty_utils::init_logger;
+use tracing::{debug, error};
 
 fn main() {
-    let config: Config = Config {
-        host: Env::get_parsed("HOST"),
-        port: Env::get_parsed("PORT"),
-        pool_size: Env::get_parsed("POOL_SIZE"),
+    init_logger();
+
+    let config: ServerConfig = ServerConfig {
+        port: Config::from_env("PORT").unwrap_or(3000),
+        pool_size: Config::from_env("POOL_SIZE").unwrap_or(100),
+        host: Config::from_env("HOST").unwrap_or_else(|_| Ipv4Addr::new(127, 0, 0, 1)),
     };
 
-    Router::new(Router::initialize_modules([core::routes()]));
-    App::new(config);
+    let mut router: Router = Router::new();
+
+    router.get("/ping", |_request: Request, response: Response| {
+        debug!("pong!");
+        response.send(HttpStatus::Ok);
+    });
+
+    match Server::new(router, config) {
+        Ok(server) => {
+            server.listen();
+        }
+        Err(e) => {
+            error!("Failed to start server: {e}");
+            process::exit(1);
+        }
+    }
 }

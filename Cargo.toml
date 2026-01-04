@@ -15,4 +15,3 @@ rusty_server = { path = "crates/rusty_server" }
 rusty_utils  = { path = "crates/rusty_utils" }
 
 tracing = { version = "=0.1.44"}
-tracing-subscriber = { version = "=0.3.22", features = ["env-filter"]}

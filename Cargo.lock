@@ -150,7 +150,6 @@ dependencies = [
  "rusty_server",
  "rusty_utils",
  "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -177,7 +176,9 @@ dependencies = [
 name = "rusty_utils"
 version = "0.1.0"
 dependencies = [
+ "rusty_config",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
