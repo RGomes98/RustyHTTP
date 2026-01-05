@@ -12,6 +12,3 @@ rusty_config = { path = "crates/rusty_config" }
 rusty_http   = { path = "crates/rusty_http" }
 rusty_router = { path = "crates/rusty_router" }
 rusty_server = { path = "crates/rusty_server" }
-rusty_utils  = { path = "crates/rusty_utils" }
-
-tracing = { version = "=0.1.44"}

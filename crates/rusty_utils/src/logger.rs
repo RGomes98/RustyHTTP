@@ -1,8 +1,10 @@
+use std::error::Error;
+
 use rusty_config::Config;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
-pub fn init_logger() {
+pub fn init_logger() -> Result<(), Box<dyn Error + Send + Sync>> {
     let log_level: String = Config::from_env("RUST_LOG").unwrap_or_else(|_| "info".to_string());
 
     let filter: EnvFilter = EnvFilter::try_from_default_env()
@@ -12,7 +14,8 @@ pub fn init_logger() {
     tracing_subscriber::fmt()
         .with_env_filter(filter)
         .with_target(true)
-        .init();
+        .try_init()?;
 
     info!("Log level set to: {log_level}");
+    Ok(())
 }

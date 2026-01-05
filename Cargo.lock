@@ -148,8 +148,6 @@ dependencies = [
  "rusty_http",
  "rusty_router",
  "rusty_server",
- "rusty_utils",
- "tracing",
 ]
 
 [[package]]

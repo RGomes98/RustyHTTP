@@ -4,7 +4,7 @@ use std::sync::Arc;
 use super::RequestHandler;
 use super::error::ServerError;
 use rusty_router::Router;
-use rusty_utils::ThreadPool;
+use rusty_utils::{ThreadPool, init_logger};
 use tracing::{debug, error, info, warn};
 
 pub struct ServerConfig {
@@ -36,6 +36,15 @@ impl Server {
 
     pub fn socket_address(&self) -> String {
         format!("{}:{}", self.config.host, self.config.port)
+    }
+
+    pub fn with_default_logger(self) -> Self {
+        match init_logger() {
+            Ok(_) => info!("Default logger initialized successfully"),
+            Err(_) => warn!("Logger already initialized, using existing global subscriber"),
+        };
+
+        self
     }
 
     pub fn listen(&self) {
