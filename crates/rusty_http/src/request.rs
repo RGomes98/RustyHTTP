@@ -8,7 +8,7 @@ use super::HttpMethod;
 use tracing::{debug, trace, warn};
 
 type RequestLine<'a> = (&'a str, &'a str, HttpMethod);
-type Headers<'a> = HashMap<Cow<'a, str>, Cow<'a, str>>;
+pub type Headers<'a> = HashMap<Cow<'a, str>, Cow<'a, str>>;
 
 const HEADERS_SEPARATOR: char = ':';
 
@@ -46,7 +46,6 @@ impl<'a> Request<'a> {
 
     fn parse_headers(raw_headers: Lines) -> Result<Headers, HttpError> {
         raw_headers
-            .into_iter()
             .take_while(|line: &&str| !line.trim().is_empty())
             .map(|header: &str| {
                 let values: (&str, &str) = header.split_once(HEADERS_SEPARATOR).ok_or_else(|| {
@@ -57,13 +56,13 @@ impl<'a> Request<'a> {
                 let key: &str = values.0.trim();
                 let value: &str = values.1.trim();
 
-                let key_cow: Cow<str> = if key.chars().all(|char: char| char.is_lowercase()) {
-                    Cow::Borrowed(key)
+                let key_cow: Cow<str> = if key.as_bytes().iter().any(|byte: &u8| byte.is_ascii_uppercase()) {
+                    Cow::Owned(key.to_ascii_lowercase())
                 } else {
-                    Cow::Owned(key.to_lowercase())
+                    Cow::Borrowed(key)
                 };
 
-                Ok((key_cow, Cow::Borrowed(value.trim())))
+                Ok((key_cow, Cow::Borrowed(value)))
             })
             .collect::<Result<Headers, HttpError>>()
     }
