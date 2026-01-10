@@ -9,6 +9,7 @@ use tracing::{debug, trace, warn};
 
 type RequestLine<'a> = (&'a str, &'a str, HttpMethod);
 pub type Headers<'a> = HashMap<Cow<'a, str>, Cow<'a, str>>;
+pub type Params<'a> = HashMap<&'a str, &'a str>;
 
 const HEADERS_SEPARATOR: char = ':';
 
@@ -18,6 +19,7 @@ pub struct Request<'a> {
     pub path: &'a str,
     pub version: &'a str,
     pub headers: Headers<'a>,
+    pub params: Params<'a>,
 }
 
 impl<'a> Request<'a> {
@@ -41,7 +43,16 @@ impl<'a> Request<'a> {
             path,
             version,
             method,
+            params: HashMap::new(),
         })
+    }
+
+    pub fn set_params(&mut self, raw_params: Vec<(&'a str, &'a str)>) {
+        self.params.reserve(raw_params.len());
+
+        for (key, value) in raw_params {
+            self.params.insert(key, value);
+        }
     }
 
     fn parse_headers(raw_headers: Lines) -> Result<Headers, HttpError> {

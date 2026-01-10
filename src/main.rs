@@ -1,7 +1,7 @@
 use std::net::Ipv4Addr;
 
 use rusty_config::Config;
-use rusty_http::{Headers, HttpStatus, Request, Response};
+use rusty_http::{Headers, HttpStatus, Params, Request, Response};
 use rusty_router::Router;
 use rusty_server::{Server, ServerConfig};
 
@@ -16,8 +16,14 @@ fn main() {
 
     router.get("/ping", |req: Request, res: Response| {
         let headers: Headers = req.headers;
-        println!("{headers:#?}");
+        println!("Headers: {headers:#?}");
         println!("pong!");
+        res.send(HttpStatus::Ok);
+    });
+
+    router.get("/store/:store_id/customer/:customer_id", |req: Request, res: Response| {
+        let params: Params = req.params;
+        println!("Params: {params:#?}");
         res.send(HttpStatus::Ok);
     });
 

@@ -155,6 +155,7 @@ name = "rusty_router"
 version = "0.1.0"
 dependencies = [
  "rusty_http",
+ "rusty_utils",
  "thiserror",
  "tracing",
 ]
@@ -175,7 +176,6 @@ name = "rusty_utils"
 version = "0.1.0"
 dependencies = [
  "rusty_config",
- "thiserror",
  "tracing",
  "tracing-subscriber",
 ]

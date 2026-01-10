@@ -4,7 +4,8 @@ use std::sync::Arc;
 
 use super::error::ServerError;
 use rusty_http::{HttpError, Request, Response};
-use rusty_router::{Route, Router};
+use rusty_router::{Handler, Router};
+use rusty_utils::PathMatch;
 use tracing::{debug, error, trace, warn};
 
 const BUFFER_SIZE: usize = 4096;
@@ -23,17 +24,17 @@ impl RequestHandler {
         let response: Response = Response::new(&mut self.stream);
         trace!("Raw request read ({} bytes)", raw_request.len());
 
-        let request: Request = Request::new(&raw_request).inspect_err(|e: &HttpError| {
+        let mut request: Request = Request::new(&raw_request).inspect_err(|e: &HttpError| {
             warn!("Failed to parse request from {peer_addr:?}: {e}");
         })?;
 
-        let route: &Route = self.router.get_route(request.path, &request.method).ok_or_else(|| {
+        let route: PathMatch<Handler> = self.router.get_route(request.path, &request.method).ok_or_else(|| {
             warn!("404 Not Found: {} {}", request.method, request.path);
             ServerError::Request(HttpError::ResponseStatus(404))
         })?;
 
-        debug!("Route matched: '{}'", route.path);
-        (route.handler)(request, response);
+        request.set_params(route.params);
+        (route.value)(request, response);
 
         debug!("Request finished successfully");
         Ok(())
