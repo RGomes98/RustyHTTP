@@ -7,9 +7,9 @@ pub enum Segment<'a> {
 }
 
 #[derive(Debug)]
-pub struct PathMatch<'a, 'b, T> {
-    pub value: &'a T,
-    pub params: Vec<(&'a str, &'b str)>,
+pub struct PathMatch<'tree, 'path, T> {
+    pub value: &'tree T,
+    pub params: Vec<(&'tree str, &'path str)>,
 }
 
 #[derive(Debug)]
@@ -68,9 +68,9 @@ impl<T> PathTree<T> {
         current.value.replace(value)
     }
 
-    pub fn find<'a, 'b, I>(&'a self, segments: I) -> Option<PathMatch<'a, 'b, T>>
+    pub fn find<'tree, 'path, I>(&'tree self, segments: I) -> Option<PathMatch<'tree, 'path, T>>
     where
-        I: Iterator<Item = &'b str>,
+        I: Iterator<Item = &'path str>,
     {
         let mut params: Vec<(&str, &str)> = Vec::with_capacity(4);
         let mut current: &Node<T> = &self.root;
