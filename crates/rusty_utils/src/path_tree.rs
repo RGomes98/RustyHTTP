@@ -1,10 +1,15 @@
-use std::{collections::HashMap, str::Split};
-use thiserror::Error;
+use std::collections::HashMap;
 
-#[derive(Debug, Error, PartialEq)]
-pub enum PathTreeError {
-    #[error("Node already has a value at path: {0}")]
-    DuplicatePath(String),
+#[derive(Debug)]
+pub enum Segment<'a> {
+    Exact(&'a str),
+    Param(&'a str),
+}
+
+#[derive(Debug)]
+pub struct PathMatch<'a, 'b, T> {
+    pub value: &'a T,
+    pub params: Vec<(&'a str, &'b str)>,
 }
 
 #[derive(Debug)]
@@ -21,14 +26,16 @@ impl<T> Default for PathTree<T> {
 #[derive(Debug)]
 pub struct Node<T> {
     value: Option<T>,
-    children: HashMap<String, Node<T>>,
+    exact_child: HashMap<String, Node<T>>,
+    param_child: Option<(String, Box<Node<T>>)>,
 }
 
 impl<T> Default for Node<T> {
     fn default() -> Self {
         Self {
             value: None,
-            children: HashMap::new(),
+            param_child: None,
+            exact_child: HashMap::new(),
         }
     }
 }
@@ -38,69 +45,47 @@ impl<T> PathTree<T> {
         Self { root: Node::default() }
     }
 
-    pub fn insert(&mut self, path: &str, value: T) -> Result<(), PathTreeError> {
-        let segments: Split<&str> = path.trim_matches('/').split("/"); // TODO: hardcoded? helper?
+    pub fn insert<'a, I>(&mut self, segments: I, value: T)
+    where
+        I: Iterator<Item = Segment<'a>>,
+    {
         let mut current: &mut Node<T> = &mut self.root;
 
-        for segment in segments {
-            if segment.is_empty() {
-                continue;
+        for path in segments {
+            match path {
+                Segment::Exact(path) => {
+                    current = current.exact_child.entry(path.into()).or_default();
+                }
+                Segment::Param(name) => {
+                    current = &mut current
+                        .param_child
+                        .get_or_insert((name.into(), Box::new(Node::default())))
+                        .1;
+                }
             }
-
-            current = current.children.entry(segment.to_string()).or_default();
         }
-
-        if current.value.is_some() {
-            return Err(PathTreeError::DuplicatePath(path.to_string()));
-        };
 
         current.value = Some(value);
-        Ok(())
     }
 
-    pub fn find(&self, path: &str) -> &Node<T> {
-        let segments: Split<&str> = path.trim_matches('/').split("/"); // TODO: hardcoded? helper?
+    pub fn find<'a, 'b, I>(&'a self, segments: I) -> Option<PathMatch<'a, 'b, T>>
+    where
+        I: Iterator<Item = &'b str>,
+    {
+        let mut params: Vec<(&str, &str)> = Vec::with_capacity(4);
         let mut current: &Node<T> = &self.root;
 
-        for segment in segments {
-            if segment.is_empty() {
-                continue;
-            }
-
-            if let Some(node) = current.children.get(segment) {
-                current = node
+        for path in segments {
+            if let Some(next_node) = current.exact_child.get(path) {
+                current = next_node
+            } else if let Some((key, next_node)) = &current.param_child {
+                params.push((key.as_str(), path));
+                current = next_node
+            } else {
+                return None;
             }
         }
 
-        current
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn insert_and_find() {
-        let mut path_tree: PathTree<u8> = PathTree::new();
-
-        path_tree.insert("/users/list", 1).unwrap();
-        path_tree.insert("/users/comments", 2).unwrap();
-        path_tree.insert("/users/likes", 3).unwrap();
-
-        assert_eq!(path_tree.find("/users/list").value, Some(1));
-        assert_eq!(path_tree.find("/users/comments").value, Some(2));
-        assert_eq!(path_tree.find("/users/likes").value, Some(3));
-    }
-
-    #[test]
-    fn duplicated_path() {
-        const PATH: &str = "/users/list";
-
-        let mut path_tree: PathTree<u8> = PathTree::new();
-        path_tree.insert(PATH, 1).unwrap();
-
-        let result: Result<(), PathTreeError> = path_tree.insert(PATH, 2);
-        assert_eq!(result, Err(PathTreeError::DuplicatePath(PATH.to_string())));
+        current.value.as_ref().map(|val: &T| PathMatch { value: val, params })
     }
 }
