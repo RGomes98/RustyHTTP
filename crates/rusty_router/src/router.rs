@@ -3,16 +3,19 @@ use std::collections::HashMap;
 use super::RouterError;
 use crate::method_impl;
 use rusty_http::{HttpMethod, Request, Response};
+use rusty_utils::{PathMatch, PathTree, Segment};
 use tracing::{debug, trace, warn};
 
 type Path = &'static str;
-type RouteMap = HashMap<Path, Route>;
-type Routes = HashMap<HttpMethod, RouteMap>; // TODO: Refactor to support dynamic routes (wildcards)
+type Routes = HashMap<HttpMethod, PathTree<Handler>>; // TODO: Add support to dynamic routes (wildcards)
+pub type Handler = Box<dyn Fn(Request, Response) + Send + Sync>;
+
+const ROUTER_RULES: (char, char) = ('/', ':');
 
 pub struct Route {
     pub path: Path,
+    pub handler: Handler,
     pub method: HttpMethod,
-    pub handler: Box<dyn Fn(Request, Response) + Send + Sync>,
 }
 
 pub struct Router {
@@ -43,19 +46,54 @@ impl Router {
         .expect("Fatal error registering route");
     }
 
-    pub fn get_route(&self, path: &str, method: &HttpMethod) -> Option<&Route> {
+    pub fn get_route<'a, 'b>(&'a self, path: &'b str, method: &HttpMethod) -> Option<PathMatch<'a, 'b, Handler>> {
         trace!("Looking up route for {method} {path}");
 
-        let route_map: &RouteMap = self.routes.get(method)?;
-        let route: Option<&Route> = route_map.get(path);
+        let path_tree: &PathTree<Handler> = self.routes.get(method)?;
+        let route: Option<PathMatch<Handler>> = path_tree.find(Self::sanitize_path(path));
 
         if route.is_some() {
-            trace!("Route found: {}", Self::fmt_route(method, path));
+            debug!("Route found: {}", Self::fmt_route(method, path));
         } else {
             debug!("No route match found for {}", Self::fmt_route(method, path));
         }
 
         route
+    }
+
+    fn add_route(&mut self, route: Route) -> Result<(), RouterError> {
+        let path_tree: &mut PathTree<Handler> = self.routes.entry(route.method).or_default();
+
+        if path_tree
+            .insert(Self::parse_to_segment(route.path), route.handler)
+            .is_some()
+        {
+            warn!("Route already exists: {}", Self::fmt_route(&route.method, route.path));
+            return Err(RouterError::DuplicateRoute(Self::fmt_route(&route.method, route.path)));
+        };
+
+        debug!("Registered route: {}", Self::fmt_route(&route.method, route.path,));
+        Ok(())
+    }
+
+    fn parse_to_segment<'a>(path: &'a str) -> impl Iterator<Item = Segment<'a>> {
+        Self::sanitize_path(path).map(|path: &str| {
+            if path.starts_with(ROUTER_RULES.1) {
+                Segment::Param(&path[1..])
+            } else {
+                Segment::Exact(path)
+            }
+        })
+    }
+
+    fn sanitize_path(path: &str) -> impl Iterator<Item = &str> {
+        path.trim_matches(ROUTER_RULES.0)
+            .split(ROUTER_RULES.0)
+            .filter(|s: &&str| !s.is_empty())
+    }
+
+    fn fmt_route(method: &HttpMethod, path: &str) -> String {
+        format!("[{method}] - '{path}'")
     }
 
     method_impl!(get, HttpMethod::GET);
@@ -73,21 +111,4 @@ impl Router {
     method_impl!(options, HttpMethod::OPTIONS);
 
     method_impl!(trace, HttpMethod::TRACE);
-
-    fn add_route(&mut self, route: Route) -> Result<(), RouterError> {
-        let route_map: &mut RouteMap = self.routes.entry(route.method).or_default();
-
-        if route_map.contains_key(&route.path) {
-            warn!("Route already exists: {}", Self::fmt_route(&route.method, route.path));
-            return Err(RouterError::DuplicateRoute(Self::fmt_route(&route.method, route.path)));
-        }
-
-        debug!("Registered route: {}", Self::fmt_route(&route.method, route.path,));
-        route_map.insert(route.path, route);
-        Ok(())
-    }
-
-    fn fmt_route(method: &HttpMethod, path: &str) -> String {
-        format!("[{method}] - '{path}'")
-    }
 }

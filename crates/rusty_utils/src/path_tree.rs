@@ -45,7 +45,7 @@ impl<T> PathTree<T> {
         Self { root: Node::default() }
     }
 
-    pub fn insert<'a, I>(&mut self, segments: I, value: T)
+    pub fn insert<'a, I>(&mut self, segments: I, value: T) -> Option<T>
     where
         I: Iterator<Item = Segment<'a>>,
     {
@@ -65,7 +65,7 @@ impl<T> PathTree<T> {
             }
         }
 
-        current.value = Some(value);
+        current.value.replace(value)
     }
 
     pub fn find<'a, 'b, I>(&'a self, segments: I) -> Option<PathMatch<'a, 'b, T>>
