@@ -1,6 +1,6 @@
-use std::io::Read;
 use std::net::TcpStream;
 use std::sync::Arc;
+use std::{io::Read, net::SocketAddr};
 
 use super::error::ServerError;
 use rusty_http::{HttpError, Request, Response};
@@ -17,7 +17,7 @@ pub struct RequestHandler {
 
 impl RequestHandler {
     pub fn handle(&mut self) -> Result<(), ServerError> {
-        let peer_addr: Option<std::net::SocketAddr> = self.stream.peer_addr().ok();
+        let peer_addr: Option<SocketAddr> = self.stream.peer_addr().ok();
         debug!("Processing connection from: {peer_addr:?}");
 
         let raw_request: String = self.read_stream()?;
@@ -41,7 +41,7 @@ impl RequestHandler {
     }
 
     fn read_stream(&mut self) -> Result<String, ServerError> {
-        let mut buffer: [u8; 4096] = [0; BUFFER_SIZE];
+        let mut buffer: [u8; 4096] = [0; BUFFER_SIZE]; // TODO: Dynamic buffer size
 
         match self.stream.read(&mut buffer) {
             Ok(size) => {

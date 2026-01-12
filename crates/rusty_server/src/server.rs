@@ -34,8 +34,11 @@ impl Server {
         })
     }
 
-    pub fn socket_address(&self) -> String {
-        format!("{}:{}", self.config.host, self.config.port)
+    pub fn address(&self) -> String {
+        self.listener
+            .local_addr()
+            .map(|a| a.to_string())
+            .unwrap_or_else(|_| "unknown".into())
     }
 
     pub fn with_default_logger(self) -> Self {
@@ -48,8 +51,8 @@ impl Server {
     }
 
     pub fn listen(&self) {
+        info!("Server running on http://{}", self.address());
         let pool: ThreadPool = ThreadPool::new(self.config.pool_size);
-        info!("Server running on http://{}", self.socket_address());
 
         for stream in self.listener.incoming() {
             match stream {
