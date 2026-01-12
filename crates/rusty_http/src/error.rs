@@ -13,6 +13,9 @@ pub enum HttpError {
     #[error("Invalid Method: '{0}'. Supported methods: GET, POST, PUT, DELETE, PATCH...")]
     InvalidMethod(String),
 
+    #[error("Bad Request: {0}")]
+    BadRequest(String),
+
     #[error("Unknown Status Code: {0}. Expected integer between 100 and 599")]
     UnknownStatusCode(u16),
 

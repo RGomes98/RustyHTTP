@@ -1,4 +1,4 @@
-use std::io;
+use std::{io, str};
 
 use rusty_http::HttpError;
 use thiserror::Error;
@@ -10,4 +10,7 @@ pub enum ServerError {
 
     #[error("I/O Error: {0}")]
     Io(#[from] io::Error),
+
+    #[error("UTF-8 Parsing Error: {0}")]
+    Utf8(#[from] str::Utf8Error),
 }

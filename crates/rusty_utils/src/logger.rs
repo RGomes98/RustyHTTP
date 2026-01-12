@@ -5,7 +5,7 @@ use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 pub fn init_logger() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let log_level: String = Config::from_env("RUST_LOG").unwrap_or_else(|_| "info".to_string());
+    let log_level: String = Config::from_env("RUST_LOG").unwrap_or_else(|_| "info".into());
 
     let filter: EnvFilter = EnvFilter::try_from_default_env()
         .or_else(|_| EnvFilter::try_new(&log_level))

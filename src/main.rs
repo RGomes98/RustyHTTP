@@ -14,17 +14,17 @@ fn main() {
         host: Config::from_env("HOST").unwrap_or_else(|_| Ipv4Addr::new(127, 0, 0, 1)),
     };
 
-    router.get("/ping", |req: Request, res: Response| {
-        let headers: Headers = req.headers;
+    router.get("/ping", |request: Request| {
+        let headers: Headers = request.headers;
         println!("Headers: {headers:#?}");
         println!("pong!");
-        res.send(HttpStatus::Ok);
+        Response::new(HttpStatus::Ok)
     });
 
-    router.get("/store/:store_id/customer/:customer_id", |req: Request, res: Response| {
-        let params: Params = req.params;
+    router.get("/store/:store_id/customer/:customer_id", |request: Request| {
+        let params: Params = request.params;
         println!("Params: {params:#?}");
-        res.send(HttpStatus::Ok);
+        Response::new(HttpStatus::Ok)
     });
 
     Server::new(router, config)

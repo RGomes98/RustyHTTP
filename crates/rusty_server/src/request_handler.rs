@@ -1,9 +1,10 @@
 use std::net::TcpStream;
+use std::str::Utf8Error;
 use std::sync::Arc;
 use std::{io::Read, net::SocketAddr};
 
 use super::error::ServerError;
-use rusty_http::{HttpError, Request, Response};
+use rusty_http::{HttpError, Request};
 use rusty_router::{Handler, Router};
 use rusty_utils::PathMatch;
 use tracing::{debug, error, trace, warn};
@@ -20,11 +21,16 @@ impl RequestHandler {
         let peer_addr: Option<SocketAddr> = self.stream.peer_addr().ok();
         debug!("Processing connection from: {peer_addr:?}");
 
-        let raw_request: String = self.read_stream()?;
-        let response: Response = Response::new(&mut self.stream);
-        trace!("Raw request read ({} bytes)", raw_request.len());
+        let mut buffer: [u8; 4096] = [0; BUFFER_SIZE]; // TODO: Dynamic Buffer & Keep-Alive
+        let bytes_read: usize = self.read_stream(&mut buffer)?;
+        let raw_bytes: &[u8] = &buffer[..bytes_read];
 
-        let mut request: Request = Request::new(&raw_request).inspect_err(|e: &HttpError| {
+        let raw_request: &str = str::from_utf8(raw_bytes).map_err(|e: Utf8Error| {
+            warn!("Invalid UTF-8 sequence from {peer_addr:?}: {e}");
+            ServerError::Request(HttpError::BadRequest(format!("Invalid UTF-8 sequence: {e}")))
+        })?;
+
+        let mut request: Request = Request::new(raw_request).inspect_err(|e: &HttpError| {
             warn!("Failed to parse request from {peer_addr:?}: {e}");
         })?;
 
@@ -34,16 +40,14 @@ impl RequestHandler {
         })?;
 
         request.set_params(route.params);
-        (route.value)(request, response);
+        (route.value)(request).write_to_stream(&mut self.stream)?;
 
         debug!("Request finished successfully");
         Ok(())
     }
 
-    fn read_stream(&mut self) -> Result<String, ServerError> {
-        let mut buffer: [u8; 4096] = [0; BUFFER_SIZE]; // TODO: Dynamic buffer size
-
-        match self.stream.read(&mut buffer) {
+    fn read_stream(&mut self, buffer: &mut [u8]) -> Result<usize, ServerError> {
+        match self.stream.read(buffer) {
             Ok(size) => {
                 if size == 0 {
                     debug!("Stream closed by client (0 bytes read)");
@@ -51,7 +55,7 @@ impl RequestHandler {
                     trace!("Read {size} bytes from stream");
                 }
 
-                Ok(String::from_utf8_lossy(&buffer[..size]).into())
+                Ok(size)
             }
             Err(e) => {
                 error!("Failed to read from stream: {e}");

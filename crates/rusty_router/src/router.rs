@@ -8,7 +8,7 @@ use tracing::{debug, trace, warn};
 
 type Path = &'static str;
 type Routes = HashMap<HttpMethod, PathTree<Handler>>; // TODO: Add support to dynamic routes (wildcards)
-pub type Handler = Box<dyn Fn(Request, Response) + Send + Sync>;
+pub type Handler = Box<dyn Fn(Request) -> Response + Send + Sync>;
 
 const ROUTER_RULES: (char, char) = ('/', ':');
 
@@ -36,7 +36,7 @@ impl Router {
 
     pub fn register<F>(&mut self, method: HttpMethod, path: &'static str, handler: F)
     where
-        F: Fn(Request, Response) + Send + Sync + 'static,
+        F: Fn(Request) -> Response + Send + Sync + 'static,
     {
         self.add_route(Route {
             path,
@@ -93,7 +93,7 @@ impl Router {
     }
 
     fn fmt_route(method: &HttpMethod, path: &str) -> String {
-        format!("[{method}] - '{path}'")
+        format!("[{method}] - \"{path}\"")
     }
 
     method_impl!(get, HttpMethod::GET);

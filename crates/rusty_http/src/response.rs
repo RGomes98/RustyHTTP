@@ -1,33 +1,24 @@
-use std::io::{Error, Write};
+use std::io::Write;
 use std::net::TcpStream;
 
 use super::{HttpError, HttpStatus};
 
-use tracing::{debug, error};
+use tracing::debug;
 
-pub struct Response<'a> {
-    stream: &'a mut TcpStream,
+pub struct Response {
+    status: HttpStatus,
 }
 
-impl<'a> Response<'a> {
-    pub fn new(stream: &'a mut TcpStream) -> Self {
-        Self { stream }
+impl Response {
+    pub fn new(status: HttpStatus) -> Self {
+        Self { status }
     }
 
-    pub fn send(self, status: HttpStatus) -> Result<(), HttpError> {
-        let status_code: u16 = status.into();
-
-        debug!("Sending HTTP response: {status_code} {status}");
-        let response: String = format!("HTTP/1.1 {status_code} {status}\r\n\r\n");
-
-        self.stream.write_all(response.as_bytes()).inspect_err(|e: &Error| {
-            error!("Failed to write response bytes to stream: {e}");
-        })?;
-
-        self.stream.flush().inspect_err(|e: &Error| {
-            error!("Failed to flush response stream: {e}");
-        })?;
-
+    pub fn write_to_stream(self, stream: &mut TcpStream) -> Result<(), HttpError> {
+        let status_code: u16 = self.status.into();
+        debug!("Sending HTTP response: {} {}", status_code, self.status);
+        stream.write_all(format!("HTTP/1.1 {} {}\r\n\r\n", status_code, self.status).as_bytes())?;
+        stream.flush()?;
         Ok(())
     }
 }

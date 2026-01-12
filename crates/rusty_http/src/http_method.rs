@@ -45,7 +45,7 @@ impl str::FromStr for HttpMethod {
             "HEAD" => Ok(HttpMethod::HEAD),
             "OPTIONS" => Ok(HttpMethod::OPTIONS),
             "TRACE" => Ok(HttpMethod::TRACE),
-            _ => Err(HttpError::InvalidMethod(s.to_string())),
+            _ => Err(HttpError::InvalidMethod(s.into())),
         }
     }
 }
