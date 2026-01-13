@@ -3,8 +3,7 @@ use std::str::Utf8Error;
 use std::sync::Arc;
 use std::{io::Read, net::SocketAddr};
 
-use super::error::ServerError;
-use rusty_http::{HttpError, Request};
+use rusty_http::{HttpError, HttpStatus, Request};
 use rusty_router::{Handler, Router};
 use rusty_utils::PathMatch;
 use tracing::{debug, error, trace, warn};
@@ -17,7 +16,7 @@ pub struct RequestHandler {
 }
 
 impl RequestHandler {
-    pub fn handle(&mut self) -> Result<(), ServerError> {
+    pub fn handle(&mut self) -> Result<(), HttpError> {
         let peer_addr: Option<SocketAddr> = self.stream.peer_addr().ok();
         debug!("Processing connection from: {peer_addr:?}");
 
@@ -27,7 +26,7 @@ impl RequestHandler {
 
         let raw_request: &str = str::from_utf8(raw_bytes).map_err(|e: Utf8Error| {
             warn!("Invalid UTF-8 sequence from {peer_addr:?}: {e}");
-            ServerError::Request(HttpError::BadRequest(format!("Invalid UTF-8 sequence: {e}")))
+            HttpError::new(HttpStatus::BadRequest, format!("Invalid UTF-8 sequence: {e}"))
         })?;
 
         let mut request: Request = Request::new(raw_request).inspect_err(|e: &HttpError| {
@@ -35,8 +34,8 @@ impl RequestHandler {
         })?;
 
         let route: PathMatch<Handler> = self.router.get_route(request.path, &request.method).ok_or_else(|| {
-            warn!("404 Not Found: {} {}", request.method, request.path);
-            ServerError::Request(HttpError::ResponseStatus(404))
+            warn!("404 Not Found: [{}] \"{}\"", request.method, request.path);
+            HttpError::new(HttpStatus::NotFound, "The requested resource could not be found")
         })?;
 
         request.set_params(route.params);
@@ -46,7 +45,7 @@ impl RequestHandler {
         Ok(())
     }
 
-    fn read_stream(&mut self, buffer: &mut [u8]) -> Result<usize, ServerError> {
+    fn read_stream(&mut self, buffer: &mut [u8]) -> Result<usize, HttpError> {
         match self.stream.read(buffer) {
             Ok(size) => {
                 if size == 0 {
@@ -59,7 +58,7 @@ impl RequestHandler {
             }
             Err(e) => {
                 error!("Failed to read from stream: {e}");
-                Err(ServerError::Io(e))
+                Err(HttpError::Io(e))
             }
         }
     }

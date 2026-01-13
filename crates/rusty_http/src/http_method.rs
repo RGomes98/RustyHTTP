@@ -1,6 +1,8 @@
 use core::fmt;
 use std::str;
 
+use crate::HttpStatus;
+
 use super::HttpError;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
@@ -45,7 +47,10 @@ impl str::FromStr for HttpMethod {
             "HEAD" => Ok(HttpMethod::HEAD),
             "OPTIONS" => Ok(HttpMethod::OPTIONS),
             "TRACE" => Ok(HttpMethod::TRACE),
-            _ => Err(HttpError::InvalidMethod(s.into())),
+            _ => Err(HttpError::new(
+                HttpStatus::BadRequest,
+                format!("Unknown or unsupported HTTP method: \"{s}\""),
+            )),
         }
     }
 }

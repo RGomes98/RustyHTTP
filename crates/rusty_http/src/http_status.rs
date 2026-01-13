@@ -3,6 +3,7 @@ use std::fmt;
 use super::HttpError;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(u16)]
 pub enum HttpStatus {
     Continue = 100,
     SwitchingProtocols = 101,
@@ -70,78 +71,15 @@ pub enum HttpStatus {
 
 impl From<HttpStatus> for u16 {
     fn from(status: HttpStatus) -> u16 {
-        match status {
-            HttpStatus::Continue => 100,
-            HttpStatus::SwitchingProtocols => 101,
-            HttpStatus::Processing => 102,
-            HttpStatus::EarlyHints => 103,
-            HttpStatus::Ok => 200,
-            HttpStatus::Created => 201,
-            HttpStatus::Accepted => 202,
-            HttpStatus::NonAuthoritativeInformation => 203,
-            HttpStatus::NoContent => 204,
-            HttpStatus::ResetContent => 205,
-            HttpStatus::PartialContent => 206,
-            HttpStatus::MultiStatus => 207,
-            HttpStatus::AlreadyReported => 208,
-            HttpStatus::ImUsed => 226,
-            HttpStatus::MultipleChoices => 300,
-            HttpStatus::MovedPermanently => 301,
-            HttpStatus::Found => 302,
-            HttpStatus::SeeOther => 303,
-            HttpStatus::NotModified => 304,
-            HttpStatus::UseProxy => 305,
-            HttpStatus::TemporaryRedirect => 307,
-            HttpStatus::PermanentRedirect => 308,
-            HttpStatus::BadRequest => 400,
-            HttpStatus::Unauthorized => 401,
-            HttpStatus::PaymentRequired => 402,
-            HttpStatus::Forbidden => 403,
-            HttpStatus::NotFound => 404,
-            HttpStatus::MethodNotAllowed => 405,
-            HttpStatus::NotAcceptable => 406,
-            HttpStatus::ProxyAuthenticationRequired => 407,
-            HttpStatus::RequestTimeout => 408,
-            HttpStatus::Conflict => 409,
-            HttpStatus::Gone => 410,
-            HttpStatus::LengthRequired => 411,
-            HttpStatus::PreconditionFailed => 412,
-            HttpStatus::PayloadTooLarge => 413,
-            HttpStatus::UriTooLong => 414,
-            HttpStatus::UnsupportedMediaType => 415,
-            HttpStatus::RangeNotSatisfiable => 416,
-            HttpStatus::ExpectationFailed => 417,
-            HttpStatus::ImATeapot => 418,
-            HttpStatus::MisdirectedRequest => 421,
-            HttpStatus::UnprocessableEntity => 422,
-            HttpStatus::Locked => 423,
-            HttpStatus::FailedDependency => 424,
-            HttpStatus::TooEarly => 425,
-            HttpStatus::UpgradeRequired => 426,
-            HttpStatus::PreconditionRequired => 428,
-            HttpStatus::TooManyRequests => 429,
-            HttpStatus::RequestHeaderFieldsTooLarge => 431,
-            HttpStatus::UnavailableForLegalReasons => 451,
-            HttpStatus::InternalServerError => 500,
-            HttpStatus::NotImplemented => 501,
-            HttpStatus::BadGateway => 502,
-            HttpStatus::ServiceUnavailable => 503,
-            HttpStatus::GatewayTimeout => 504,
-            HttpStatus::HttpVersionNotSupported => 505,
-            HttpStatus::VariantAlsoNegotiates => 506,
-            HttpStatus::InsufficientStorage => 507,
-            HttpStatus::LoopDetected => 508,
-            HttpStatus::NotExtended => 510,
-            HttpStatus::NetworkAuthenticationRequired => 511,
-        }
+        status as u16
     }
 }
 
 impl TryFrom<u16> for HttpStatus {
     type Error = HttpError;
 
-    fn try_from(value: u16) -> Result<Self, Self::Error> {
-        match value {
+    fn try_from(v: u16) -> Result<Self, Self::Error> {
+        match v {
             100 => Ok(Self::Continue),
             101 => Ok(Self::SwitchingProtocols),
             102 => Ok(Self::Processing),
@@ -204,7 +142,10 @@ impl TryFrom<u16> for HttpStatus {
             508 => Ok(Self::LoopDetected),
             510 => Ok(Self::NotExtended),
             511 => Ok(Self::NetworkAuthenticationRequired),
-            _ => Err(HttpError::UnknownStatusCode(value)),
+            _ => Err(HttpError::new(
+                HttpStatus::InternalServerError,
+                format!("Unknown or non-standard HTTP status code: {v}"),
+            )),
         }
     }
 }

@@ -2,6 +2,8 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::str::{FromStr, Lines, SplitWhitespace};
 
+use crate::HttpStatus;
+
 use super::HttpError;
 use super::HttpMethod;
 
@@ -28,8 +30,8 @@ impl<'a> Request<'a> {
         let mut lines: Lines = raw_request.lines();
 
         let request_lines: &str = lines.next().ok_or_else(|| {
-            warn!("Received empty request");
-            HttpError::MalformedRequestLine("Empty request".into())
+            warn!("Received empty request line");
+            HttpError::new(HttpStatus::BadRequest, "Request line is empty or missing")
         })?;
 
         let (path, version, method): RequestLine = Self::parse_request_line(request_lines)?;
@@ -61,7 +63,7 @@ impl<'a> Request<'a> {
             .map(|header: &str| {
                 let values: (&str, &str) = header.split_once(HEADERS_SEPARATOR).ok_or_else(|| {
                     warn!("Malformed header found: '{header}'");
-                    HttpError::MalformedHeaders(header.into())
+                    HttpError::new(HttpStatus::BadRequest, format!("Invalid header format: \"{header}\""))
                 })?;
 
                 let key: &str = values.0.trim();
@@ -83,17 +85,17 @@ impl<'a> Request<'a> {
 
         let method_str: &str = parts.next().ok_or_else(|| {
             warn!("Missing HTTP Method in request line");
-            HttpError::MalformedRequestLine("Missing 'METHOD'".into())
+            HttpError::new(HttpStatus::BadRequest, "Request line missing HTTP Method")
         })?;
 
         let path: &str = parts.next().ok_or_else(|| {
             warn!("Missing URI Path in request line");
-            HttpError::MalformedRequestLine("Missing 'PATH'".into())
+            HttpError::new(HttpStatus::BadRequest, "Request line missing URI Path")
         })?;
 
         let version: &str = parts.next().ok_or_else(|| {
             warn!("Missing HTTP Version in request line");
-            HttpError::MalformedRequestLine("Missing 'VERSION'".into())
+            HttpError::new(HttpStatus::BadRequest, "Request line missing HTTP Version")
         })?;
 
         let method: HttpMethod = HttpMethod::from_str(method_str).inspect_err(|_| {

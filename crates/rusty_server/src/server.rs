@@ -1,8 +1,8 @@
+use std::io::Error;
 use std::net::{Ipv4Addr, SocketAddr, TcpListener};
 use std::sync::Arc;
 
 use super::RequestHandler;
-use super::error::ServerError;
 use rusty_router::Router;
 use rusty_utils::{ThreadPool, init_logger};
 use tracing::{debug, error, info, warn};
@@ -20,7 +20,7 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn new(router: Router, config: ServerConfig) -> Result<Self, ServerError> {
+    pub fn new(router: Router, config: ServerConfig) -> Result<Self, Error> {
         let address: SocketAddr = SocketAddr::from((config.host, config.port));
         debug!("Binding TCP listener to {address}");
 
