@@ -3,6 +3,7 @@ use std::net::{Ipv4Addr, SocketAddr, TcpListener};
 use std::sync::Arc;
 
 use super::RequestHandler;
+use rusty_http::Response;
 use rusty_router::Router;
 use rusty_utils::{ThreadPool, init_logger};
 use tracing::{debug, error, info, warn};
@@ -72,6 +73,10 @@ impl Server {
                         let mut handler: RequestHandler = RequestHandler { router, stream };
                         if let Err(e) = handler.handle() {
                             error!("Failed to handle request from {peer_addr:?}: {e}");
+
+                            if let Err(e) = Response::new(e.status).write_to_stream(&mut handler.stream) {
+                                warn!("Failed to send error response to {peer_addr:?}: {e}");
+                            };
                         }
                     });
                 }
