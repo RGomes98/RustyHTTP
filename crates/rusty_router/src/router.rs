@@ -2,13 +2,13 @@ use std::collections::HashMap;
 
 use super::RouterError;
 use crate::method_impl;
-use rusty_http::{HttpMethod, Request, Response};
+use rusty_http::{HttpError, HttpMethod, Request, Response};
 use rusty_utils::{PathMatch, PathTree, Segment};
 use tracing::{debug, trace, warn};
 
 type Path = &'static str;
 type Routes = HashMap<HttpMethod, PathTree<Handler>>; // TODO: Add support to dynamic routes (wildcards)
-pub type Handler = Box<dyn Fn(Request) -> Response + Send + Sync>;
+pub type Handler = Box<dyn Fn(Request) -> Result<Response, HttpError> + Send + Sync>;
 
 const ROUTER_RULES: (char, char) = ('/', ':');
 
@@ -36,7 +36,7 @@ impl Router {
 
     pub fn register<F>(&mut self, method: HttpMethod, path: &'static str, handler: F)
     where
-        F: Fn(Request) -> Response + Send + Sync + 'static,
+        F: Fn(Request) -> Result<Response, HttpError> + Send + Sync + 'static,
     {
         self.add_route(Route {
             path,

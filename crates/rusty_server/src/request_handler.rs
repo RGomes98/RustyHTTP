@@ -6,7 +6,7 @@ use std::{io::Read, net::SocketAddr};
 use rusty_http::{HttpError, HttpStatus, Request};
 use rusty_router::{Handler, Router};
 use rusty_utils::PathMatch;
-use tracing::{debug, error, trace, warn};
+use tracing::{debug, error, warn};
 
 const BUFFER_SIZE: usize = 4096;
 
@@ -39,7 +39,7 @@ impl RequestHandler {
         })?;
 
         request.set_params(route.params);
-        (route.value)(request).write_to_stream(&mut self.stream)?;
+        (route.value)(request)?.write_to_stream(&mut self.stream)?;
 
         debug!("Request finished successfully");
         Ok(())
@@ -47,18 +47,13 @@ impl RequestHandler {
 
     fn read_stream(&mut self, buffer: &mut [u8]) -> Result<usize, HttpError> {
         match self.stream.read(buffer) {
-            Ok(size) => {
-                if size == 0 {
-                    debug!("Stream closed by client (0 bytes read)");
-                } else {
-                    trace!("Read {size} bytes from stream");
-                }
-
-                Ok(size)
-            }
+            Ok(size) => Ok(size),
             Err(e) => {
-                error!("Failed to read from stream: {e}");
-                Err(HttpError::Io(e))
+                error!("Network I/O error: {e}");
+                Err(HttpError::new(
+                    HttpStatus::InternalServerError,
+                    "Failed to read data from connection",
+                ))
             }
         }
     }

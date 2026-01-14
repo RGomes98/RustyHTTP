@@ -18,13 +18,13 @@ fn main() {
         let headers: Headers = request.headers;
         println!("Headers: {headers:#?}");
         println!("pong!");
-        Response::new(HttpStatus::Ok)
+        Ok(Response::new(HttpStatus::Ok))
     });
 
     router.get("/store/:store_id/customer/:customer_id", |request: Request| {
         let params: Params = request.params;
         println!("Params: {params:#?}");
-        Response::new(HttpStatus::Ok)
+        Ok(Response::new(HttpStatus::Ok))
     });
 
     Server::new(router, config)

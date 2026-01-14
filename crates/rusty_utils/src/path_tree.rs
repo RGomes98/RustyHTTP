@@ -86,6 +86,6 @@ impl<T> PathTree<T> {
             }
         }
 
-        current.value.as_ref().map(|val: &T| PathMatch { value: val, params })
+        current.value.as_ref().map(|value: &T| PathMatch { value, params })
     }
 }

@@ -50,11 +50,7 @@ impl<'a> Request<'a> {
     }
 
     pub fn set_params(&mut self, raw_params: Vec<(&'a str, &'a str)>) {
-        self.params.reserve(raw_params.len());
-
-        for (key, value) in raw_params {
-            self.params.insert(key, value);
-        }
+        self.params.extend(raw_params);
     }
 
     fn parse_headers(raw_headers: Lines) -> Result<Headers, HttpError> {
