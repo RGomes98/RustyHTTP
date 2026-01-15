@@ -112,3 +112,144 @@ impl Router {
 
     method_impl!(trace, HttpMethod::TRACE);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rusty_http::{HttpStatus, Request, Response};
+
+    fn dummy_handler(_req: Request) -> Result<Response, HttpError> {
+        Ok(Response::new(HttpStatus::Ok))
+    }
+
+    #[test]
+    fn test_basic_static_route_match() {
+        let mut router: Router = Router::new();
+        router.get("/ping", dummy_handler);
+
+        let result: Option<PathMatch<Handler>> = router.get_route("/ping", &HttpMethod::GET);
+        assert!(result.is_some());
+
+        let match_data: PathMatch<Handler> = result.unwrap();
+        assert!(match_data.params.is_empty());
+    }
+
+    #[test]
+    fn test_route_not_found() {
+        let mut router: Router = Router::new();
+        router.get("/ping", dummy_handler);
+
+        let result: Option<PathMatch<Handler>> = router.get_route("/pong", &HttpMethod::GET);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_method_mismatch() {
+        let mut router: Router = Router::new();
+        router.get("/data", dummy_handler);
+
+        let result_get: Option<PathMatch<Handler>> = router.get_route("/data", &HttpMethod::GET);
+        assert!(result_get.is_some());
+
+        let result_post: Option<PathMatch<Handler>> = router.get_route("/data", &HttpMethod::POST);
+        assert!(result_post.is_none());
+    }
+
+    #[test]
+    fn test_single_parameter_extraction() {
+        let mut router: Router = Router::new();
+        router.get("/users/:id", dummy_handler);
+
+        let result: Option<PathMatch<Handler>> = router.get_route("/users/123", &HttpMethod::GET);
+        assert!(result.is_some());
+
+        let match_data: PathMatch<Handler> = result.unwrap();
+        assert_eq!(match_data.params.len(), 1);
+        assert_eq!(match_data.params[0], ("id", "123"));
+    }
+
+    #[test]
+    fn test_multiple_parameters_extraction() {
+        let mut router: Router = Router::new();
+        router.get("/store/:store_id/customer/:customer_id", dummy_handler);
+
+        let result: Option<PathMatch<Handler>> = router.get_route("/store/99/customer/500", &HttpMethod::GET);
+        assert!(result.is_some());
+
+        let match_data: PathMatch<Handler> = result.unwrap();
+        assert_eq!(match_data.params.len(), 2);
+
+        let has_store: bool = match_data.params.contains(&("store_id", "99"));
+        let has_customer: bool = match_data.params.contains(&("customer_id", "500"));
+
+        assert!(has_store);
+        assert!(has_customer);
+    }
+
+    #[test]
+    fn test_path_sanitization_and_trailing_slashes() {
+        let mut router: Router = Router::new();
+        router.get("/api/v1/status", dummy_handler);
+
+        let paths_to_test: Vec<&str> = vec![
+            "/api/v1/status",
+            "api/v1/status",
+            "/api/v1/status/",
+            "//api/v1/status//",
+        ];
+
+        for path in paths_to_test {
+            let result: Option<PathMatch<Handler>> = router.get_route(path, &HttpMethod::GET);
+            assert!(result.is_some(), "Failed to match path: {path}");
+        }
+    }
+
+    #[test]
+    fn test_deep_nested_static_routes() {
+        let mut router: Router = Router::new();
+        router.get("/a/b/c/d", dummy_handler);
+
+        let result: Option<PathMatch<Handler>> = router.get_route("/a/b/c/d", &HttpMethod::GET);
+        assert!(result.is_some());
+
+        let partial: Option<PathMatch<Handler>> = router.get_route("/a/b/c", &HttpMethod::GET);
+        assert!(partial.is_none());
+    }
+
+    #[test]
+    fn test_mixed_exact_and_param_segments() {
+        let mut router: Router = Router::new();
+        router.get("/files/:type/recent", dummy_handler);
+
+        let result: Option<PathMatch<Handler>> = router.get_route("/files/images/recent", &HttpMethod::GET);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().params[0], ("type", "images"));
+
+        let result_fail: Option<PathMatch<Handler>> = router.get_route("/files/images/old", &HttpMethod::GET);
+        assert!(result_fail.is_none());
+    }
+
+    #[test]
+    #[should_panic(expected = "Fatal error registering route")]
+    fn test_duplicate_route_panics() {
+        let mut router: Router = Router::new();
+        router.get("/duplicate", dummy_handler);
+        router.get("/duplicate", dummy_handler);
+    }
+
+    #[test]
+    fn test_overlapping_routes_precedence() {
+        let mut router: Router = Router::new();
+
+        router.get("/users/all", dummy_handler);
+        router.get("/users/:id", dummy_handler);
+
+        let exact_match: Option<PathMatch<Handler>> = router.get_route("/users/all", &HttpMethod::GET);
+        assert!(exact_match.is_some());
+        assert!(exact_match.unwrap().params.is_empty());
+
+        let param_match: Option<PathMatch<Handler>> = router.get_route("/users/123", &HttpMethod::GET);
+        assert!(param_match.is_some());
+        assert_eq!(param_match.unwrap().params[0], ("id", "123"));
+    }
+}
