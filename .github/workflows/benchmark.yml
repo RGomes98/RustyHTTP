@@ -1,0 +1,79 @@
+name: Performance Benchmark
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  deployments: write
+  pull-requests: write
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wrk
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: rustup show
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build Server
+        run: cargo build --release
+
+      - name: Start Server
+        run: |
+          nohup ./target/release/rusty_http_server &
+          echo $! > server_pid.txt
+          sleep 5
+
+      - name: Run Benchmark
+        run: |
+          URL="http://127.0.0.1:3000"
+          OUTPUT=$(wrk -t12 -c400 -d10s $URL)
+
+          echo "--- WRK Output ---"
+          echo "$OUTPUT"
+          echo "-----------------------"
+
+          RPS=$(echo "$OUTPUT" | grep "Requests/sec" | awk '{print $2}')
+
+          printf '[
+            {
+              "name": "API Throughput",
+              "unit": "req/s",
+              "value": %s
+            }
+          ]' "$RPS" > benchmark_result.json
+
+      - name: Stop Server
+        run: kill $(cat server_pid.txt)
+
+      - name: Store and Compare Performance
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'custom'
+          output-file-path: benchmark_result.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+
+          save-data-file: true
+          comment-always: true
+          summary-always: true
+          comment-on-alert: true
+
+          fail-on-alert: true
+          alert-threshold: '105%'
