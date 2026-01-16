@@ -15,6 +15,7 @@ fn main() {
     };
 
     router.get("/ping", |request: Request| {
+        std::thread::sleep(std::time::Duration::from_millis(50));
         let headers: Headers = request.headers;
         println!("Headers: {headers:#?}");
         println!("pong!");
