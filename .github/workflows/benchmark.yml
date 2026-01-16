@@ -65,7 +65,7 @@ jobs:
       - name: Store and Compare Performance
         uses: benchmark-action/github-action-benchmark@v1
         with:
-          tool: 'custom'
+          tool: 'customBiggerIsBetter'
           output-file-path: benchmark_result.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: ${{ github.event_name == 'push' }}
