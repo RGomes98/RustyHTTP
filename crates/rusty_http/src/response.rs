@@ -1,29 +1,44 @@
-use std::io::Write;
-use std::net::TcpStream;
-
 use super::{HttpError, HttpStatus};
-
+use tokio::{io::AsyncWriteExt, net::TcpStream};
 use tracing::debug;
 
-pub struct Response {
+pub struct Response<'a> {
     status: HttpStatus,
+    body_content: Option<&'a str>,
 }
 
-impl Response {
+impl<'a> Response<'a> {
     pub fn new(status: HttpStatus) -> Self {
-        Self { status }
+        Self {
+            status,
+            body_content: None,
+        }
     }
 
-    pub fn write_to_stream(self, stream: &mut TcpStream) -> Result<(), HttpError> {
+    pub fn body(mut self, body: &'a str) -> Self {
+        self.body_content.replace(body);
+        self
+    }
+
+    pub async fn write_to_stream(self, stream: &mut TcpStream) -> Result<(), HttpError> {
+        let body_content: &str = self.body_content.unwrap_or_default();
+        let content_length: usize = body_content.len();
         let status_code: u16 = self.status.into();
-        debug!("Sending HTTP response: {} {}", status_code, self.status);
+        let status: HttpStatus = self.status;
+
+        let response: String =
+            format!("HTTP/1.1 {status_code} {status}\r\nContent-Length: {content_length}\r\n\r\n{body_content}");
+
+        debug!("Sending HTTP response: {response:#?}",);
 
         stream
-            .write_all(format!("HTTP/1.1 {} {}\r\n\r\n", status_code, self.status).as_bytes())
-            .map_err(|_| HttpError::new(HttpStatus::InternalServerError, "Failed to write response headers"))?;
+            .write_all(response.as_bytes())
+            .await
+            .map_err(|_| HttpError::new(HttpStatus::InternalServerError, "Failed to write response"))?;
 
         stream
             .flush()
+            .await
             .map_err(|_| HttpError::new(HttpStatus::InternalServerError, "Failed to flush stream"))?;
 
         Ok(())
