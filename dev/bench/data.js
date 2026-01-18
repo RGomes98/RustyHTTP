@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768698267063,
+  "lastUpdate": 1768753079434,
   "repoUrl": "https://github.com/RGomes98/RustyHTTP",
   "entries": {
     "Benchmark": [
@@ -57,6 +57,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "API Throughput",
             "value": 153048.78,
+            "unit": "req/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "54034976+RGomes98@users.noreply.github.com",
+            "name": "Renan Tavares",
+            "username": "RGomes98"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4aa870b6773a147e1be250af8104c22d28a38a78",
+          "message": "Merge pull request #3 from RGomes98/feature-sync-handlers\n\nSync handlers support",
+          "timestamp": "2026-01-18T13:17:07-03:00",
+          "tree_id": "046984a7346c06750e8da309042c981ebc6bdd59",
+          "url": "https://github.com/RGomes98/RustyHTTP/commit/4aa870b6773a147e1be250af8104c22d28a38a78"
+        },
+        "date": 1768753079179,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "API Throughput",
+            "value": 154741.12,
             "unit": "req/s"
           }
         ]
