@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768546580804,
+  "lastUpdate": 1768698267063,
   "repoUrl": "https://github.com/RGomes98/RustyHTTP",
   "entries": {
     "Benchmark": [
@@ -28,6 +28,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "API Throughput",
             "value": 15345.75,
+            "unit": "req/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "54034976+RGomes98@users.noreply.github.com",
+            "name": "Renan Tavares",
+            "username": "RGomes98"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3b72b34c4a5d87c0924ca252d9496edc8f0039d5",
+          "message": "Merge pull request #2 from RGomes98/feature-tokio-async\n\nAdd Tokio runtime",
+          "timestamp": "2026-01-17T22:03:28-03:00",
+          "tree_id": "c81ffe6fb8d45346b2fe132ba9ccbf19df2fdc42",
+          "url": "https://github.com/RGomes98/RustyHTTP/commit/3b72b34c4a5d87c0924ca252d9496edc8f0039d5"
+        },
+        "date": 1768698266841,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "API Throughput",
+            "value": 153048.78,
             "unit": "req/s"
           }
         ]
