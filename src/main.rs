@@ -1,8 +1,8 @@
 use std::net::Ipv4Addr;
 
 use rusty_config::Config;
-use rusty_http::{Headers, HttpStatus, Params, Request, Response};
-use rusty_router::Router;
+use rusty_http::{Headers, HttpError, HttpStatus, Params, Request, Response};
+use rusty_router::{Router, get, routes};
 use rusty_server::{Server, ServerConfig};
 
 fn main() {
@@ -14,14 +14,12 @@ fn main() {
         host: Config::from_env("HOST").unwrap_or_else(|_| Ipv4Addr::new(127, 0, 0, 1)),
     };
 
-    router.get("/ping", |request: Request| {
-        let headers: Headers = request.headers;
-        println!("Headers: {headers:#?}");
-        println!("pong!");
-        Ok(Response::new(HttpStatus::Ok))
+    routes!(router, {
+        get "/ping" => ping_handler,
+        get "/health" => async |_| { Ok(Response::new(HttpStatus::NoContent)) }
     });
 
-    router.get("/store/:store_id/customer/:customer_id", |request: Request| {
+    get!(router, "/store/:store_id/customer/:customer_id", async |request: Request| {
         let params: Params = request.params;
         println!("Params: {params:#?}");
         Ok(Response::new(HttpStatus::Ok))
@@ -31,4 +29,10 @@ fn main() {
         .expect("Failed to initialize server")
         .with_default_logger()
         .listen();
+}
+
+async fn ping_handler(request: Request<'_>) -> Result<Response<'static>, HttpError> {
+    let headers: Headers = request.headers;
+    println!("Headers: {headers:#?}");
+    Ok(Response::new(HttpStatus::Ok).body("pong!"))
 }

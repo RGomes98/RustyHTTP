@@ -10,3 +10,4 @@ rusty_utils = { path = "../rusty_utils" }
 
 thiserror = "2.0.17"
 tracing = { version = "=0.1.44"}
+tokio = { version = "1.49.0", features = ["full"] }
