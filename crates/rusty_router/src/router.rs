@@ -1,14 +1,29 @@
 use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
 
 use super::RouterError;
-use crate::method_impl;
 use rusty_http::{HttpError, HttpMethod, Request, Response};
 use rusty_utils::{PathMatch, PathTree, Segment};
-use tracing::{debug, trace, warn};
+use tracing::{debug, trace};
 
 type Path = &'static str;
 type Routes = HashMap<HttpMethod, PathTree<Handler>>; // TODO: Add support to dynamic routes (wildcards)
-pub type Handler = Box<dyn Fn(Request) -> Result<Response, HttpError> + Send + Sync>;
+pub type HandlerResult<'a> = Pin<Box<dyn Future<Output = Result<Response<'a>, HttpError>> + Send + 'a>>;
+pub type Handler = Box<dyn for<'a> Fn(Request<'a>) -> HandlerResult<'a> + Send + Sync>;
+
+pub trait IntoHandler: Send + Sync + 'static {
+    fn into_handler(self) -> Handler;
+}
+
+impl<T> IntoHandler for T
+where
+    T: for<'a> Fn(Request<'a>) -> HandlerResult<'a> + Send + Sync + 'static,
+{
+    fn into_handler(self) -> Handler {
+        Box::new(self)
+    }
+}
 
 const ROUTER_RULES: (char, char) = ('/', ':');
 
@@ -34,31 +49,19 @@ impl Router {
         Self { routes: HashMap::new() }
     }
 
-    pub fn register<F>(&mut self, method: HttpMethod, path: &'static str, handler: F)
-    where
-        F: Fn(Request) -> Result<Response, HttpError> + Send + Sync + 'static,
-    {
+    pub fn register<T: IntoHandler>(&mut self, method: HttpMethod, path: &'static str, handler: T) {
         self.add_route(Route {
             path,
             method,
-            handler: Box::new(handler),
+            handler: handler.into_handler(),
         })
         .expect("Fatal error registering route");
     }
 
     pub fn get_route<'a, 'b>(&'a self, path: &'b str, method: &HttpMethod) -> Option<PathMatch<'a, 'b, Handler>> {
         trace!("Looking up route for {method} {path}");
-
         let path_tree: &PathTree<Handler> = self.routes.get(method)?;
-        let route: Option<PathMatch<Handler>> = path_tree.find(Self::sanitize_path(path));
-
-        if route.is_some() {
-            debug!("Route found: {}", Self::fmt_route(method, path));
-        } else {
-            debug!("No route match found for {}", Self::fmt_route(method, path));
-        }
-
-        route
+        path_tree.find(Self::sanitize_path(path))
     }
 
     fn add_route(&mut self, route: Route) -> Result<(), RouterError> {
@@ -68,11 +71,10 @@ impl Router {
             .insert(Self::parse_to_segment(route.path), route.handler)
             .is_some()
         {
-            warn!("Route already exists: {}", Self::fmt_route(&route.method, route.path));
             return Err(RouterError::DuplicateRoute(Self::fmt_route(&route.method, route.path)));
         };
 
-        debug!("Registered route: {}", Self::fmt_route(&route.method, route.path,));
+        debug!("Registered route: {}", Self::fmt_route(&route.method, route.path));
         Ok(())
     }
 
@@ -95,37 +97,22 @@ impl Router {
     fn fmt_route(method: &HttpMethod, path: &str) -> String {
         format!("[{method}] - \"{path}\"")
     }
-
-    method_impl!(get, HttpMethod::GET);
-
-    method_impl!(post, HttpMethod::POST);
-
-    method_impl!(put, HttpMethod::PUT);
-
-    method_impl!(delete, HttpMethod::DELETE);
-
-    method_impl!(patch, HttpMethod::PATCH);
-
-    method_impl!(head, HttpMethod::HEAD);
-
-    method_impl!(options, HttpMethod::OPTIONS);
-
-    method_impl!(trace, HttpMethod::TRACE);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::get;
     use rusty_http::{HttpStatus, Request, Response};
 
-    fn dummy_handler(_req: Request) -> Result<Response, HttpError> {
+    async fn dummy_handler(_req: Request<'_>) -> Result<Response<'_>, HttpError> {
         Ok(Response::new(HttpStatus::Ok))
     }
 
     #[test]
     fn test_basic_static_route_match() {
         let mut router: Router = Router::new();
-        router.get("/ping", dummy_handler);
+        get!(router, "/ping", dummy_handler);
 
         let result: Option<PathMatch<Handler>> = router.get_route("/ping", &HttpMethod::GET);
         assert!(result.is_some());
@@ -137,7 +124,7 @@ mod tests {
     #[test]
     fn test_route_not_found() {
         let mut router: Router = Router::new();
-        router.get("/ping", dummy_handler);
+        get!(router, "/ping", dummy_handler);
 
         let result: Option<PathMatch<Handler>> = router.get_route("/pong", &HttpMethod::GET);
         assert!(result.is_none());
@@ -146,7 +133,7 @@ mod tests {
     #[test]
     fn test_method_mismatch() {
         let mut router: Router = Router::new();
-        router.get("/data", dummy_handler);
+        get!(router, "/data", dummy_handler);
 
         let result_get: Option<PathMatch<Handler>> = router.get_route("/data", &HttpMethod::GET);
         assert!(result_get.is_some());
@@ -158,7 +145,7 @@ mod tests {
     #[test]
     fn test_single_parameter_extraction() {
         let mut router: Router = Router::new();
-        router.get("/users/:id", dummy_handler);
+        get!(router, "/users/:id", dummy_handler);
 
         let result: Option<PathMatch<Handler>> = router.get_route("/users/123", &HttpMethod::GET);
         assert!(result.is_some());
@@ -171,7 +158,7 @@ mod tests {
     #[test]
     fn test_multiple_parameters_extraction() {
         let mut router: Router = Router::new();
-        router.get("/store/:store_id/customer/:customer_id", dummy_handler);
+        get!(router, "/store/:store_id/customer/:customer_id", dummy_handler);
 
         let result: Option<PathMatch<Handler>> = router.get_route("/store/99/customer/500", &HttpMethod::GET);
         assert!(result.is_some());
@@ -189,7 +176,7 @@ mod tests {
     #[test]
     fn test_path_sanitization_and_trailing_slashes() {
         let mut router: Router = Router::new();
-        router.get("/api/v1/status", dummy_handler);
+        get!(router, "/api/v1/status", dummy_handler);
 
         let paths_to_test: Vec<&str> = vec![
             "/api/v1/status",
@@ -207,7 +194,7 @@ mod tests {
     #[test]
     fn test_deep_nested_static_routes() {
         let mut router: Router = Router::new();
-        router.get("/a/b/c/d", dummy_handler);
+        get!(router, "/a/b/c/d", dummy_handler);
 
         let result: Option<PathMatch<Handler>> = router.get_route("/a/b/c/d", &HttpMethod::GET);
         assert!(result.is_some());
@@ -219,7 +206,7 @@ mod tests {
     #[test]
     fn test_mixed_exact_and_param_segments() {
         let mut router: Router = Router::new();
-        router.get("/files/:type/recent", dummy_handler);
+        get!(router, "/files/:type/recent", dummy_handler);
 
         let result: Option<PathMatch<Handler>> = router.get_route("/files/images/recent", &HttpMethod::GET);
         assert!(result.is_some());
@@ -233,16 +220,16 @@ mod tests {
     #[should_panic(expected = "Fatal error registering route")]
     fn test_duplicate_route_panics() {
         let mut router: Router = Router::new();
-        router.get("/duplicate", dummy_handler);
-        router.get("/duplicate", dummy_handler);
+        get!(router, "/duplicate", dummy_handler);
+        get!(router, "/duplicate", dummy_handler);
     }
 
     #[test]
     fn test_overlapping_routes_precedence() {
         let mut router: Router = Router::new();
 
-        router.get("/users/all", dummy_handler);
-        router.get("/users/:id", dummy_handler);
+        get!(router, "/users/all", dummy_handler);
+        get!(router, "/users/:id", dummy_handler);
 
         let exact_match: Option<PathMatch<Handler>> = router.get_route("/users/all", &HttpMethod::GET);
         assert!(exact_match.is_some());
