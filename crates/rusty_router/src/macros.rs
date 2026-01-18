@@ -1,16 +1,15 @@
 #[macro_export]
 macro_rules! route {
     ($router:ident, $method:expr, $path:literal, $handler:expr) => {{
+        #[allow(unused_imports)]
+        use $crate::{AsyncResolver, SyncResolver};
+
         fn wrapper<'a>(req: rusty_http::Request<'a>) -> $crate::HandlerResult<'a> {
-            Box::pin(async move { $handler(req).await })
+            Box::pin(async move { $crate::OutputWrapper(Some($handler(req))).resolve().await })
         }
 
         $router.register($method, $path, wrapper)
     }};
-
-    ($router:ident, $method:expr, $path:literal, |$req:ident| $body:block) => {
-        $router.register($method, $path, |$req| Box::pin(async move { $body }))
-    };
 }
 
 #[macro_export]

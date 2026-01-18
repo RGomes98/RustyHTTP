@@ -1,8 +1,8 @@
-use std::net::Ipv4Addr;
+use std::{net::Ipv4Addr, thread::sleep, time::Duration};
 
 use rusty_config::Config;
-use rusty_http::{Headers, HttpError, HttpStatus, Params, Request, Response};
-use rusty_router::{Router, get, routes};
+use rusty_http::{Headers, HttpStatus, Params, Request, Response};
+use rusty_router::{Result, Router, get, routes};
 use rusty_server::{Server, ServerConfig};
 
 fn main() {
@@ -16,10 +16,11 @@ fn main() {
 
     routes!(router, {
         get "/ping" => ping_handler,
-        get "/health" => async |_| { Ok(Response::new(HttpStatus::NoContent)) }
+        get "/health" => |_| { Ok(Response::new(HttpStatus::Ok).body("OK")) },
+        get "/john_doe" => async |_| { Ok(Response::new(HttpStatus::Ok).body(get_user().await)) },
     });
 
-    get!(router, "/store/:store_id/customer/:customer_id", async |request: Request| {
+    get!(router, "/store/:store_id/customer/:customer_id", |request: Request| {
         let params: Params = request.params;
         println!("Params: {params:#?}");
         Ok(Response::new(HttpStatus::Ok))
@@ -31,8 +32,13 @@ fn main() {
         .listen();
 }
 
-async fn ping_handler(request: Request<'_>) -> Result<Response<'static>, HttpError> {
+fn ping_handler(request: Request) -> Result {
     let headers: Headers = request.headers;
     println!("Headers: {headers:#?}");
     Ok(Response::new(HttpStatus::Ok).body("pong!"))
+}
+
+async fn get_user() -> &'static str {
+    sleep(Duration::from_secs(5));
+    "John Doe"
 }
