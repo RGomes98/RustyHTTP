@@ -1,10 +1,12 @@
+use std::borrow::Cow;
+
 use super::{HttpError, HttpStatus};
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 use tracing::debug;
 
 pub struct Response<'a> {
     status: HttpStatus,
-    body_content: Option<&'a str>,
+    body_content: Option<Cow<'a, str>>,
 }
 
 impl<'a> Response<'a> {
@@ -15,13 +17,16 @@ impl<'a> Response<'a> {
         }
     }
 
-    pub fn body(mut self, body: &'a str) -> Self {
-        self.body_content.replace(body);
+    pub fn body<T>(mut self, body: T) -> Self
+    where
+        T: Into<Cow<'a, str>>,
+    {
+        self.body_content.replace(body.into());
         self
     }
 
     pub async fn write_to_stream(self, stream: &mut TcpStream) -> Result<(), HttpError> {
-        let body_content: &str = self.body_content.unwrap_or_default();
+        let body_content: Cow<str> = self.body_content.unwrap_or_default();
         let content_length: usize = body_content.len();
         let status_code: u16 = self.status.into();
         let status: HttpStatus = self.status;

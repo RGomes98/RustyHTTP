@@ -1,29 +1,13 @@
 use std::collections::HashMap;
-use std::future::Future;
-use std::pin::Pin;
 
 use super::RouterError;
-use rusty_http::{HttpError, HttpMethod, Request, Response};
+use super::{Handler, IntoHandler};
+use rusty_http::HttpMethod;
 use rusty_utils::{PathMatch, PathTree, Segment};
 use tracing::{debug, trace};
 
 type Path = &'static str;
 type Routes = HashMap<HttpMethod, PathTree<Handler>>; // TODO: Add support to dynamic routes (wildcards)
-pub type HandlerResult<'a> = Pin<Box<dyn Future<Output = Result<Response<'a>, HttpError>> + Send + 'a>>;
-pub type Handler = Box<dyn for<'a> Fn(Request<'a>) -> HandlerResult<'a> + Send + Sync>;
-
-pub trait IntoHandler: Send + Sync + 'static {
-    fn into_handler(self) -> Handler;
-}
-
-impl<T> IntoHandler for T
-where
-    T: for<'a> Fn(Request<'a>) -> HandlerResult<'a> + Send + Sync + 'static,
-{
-    fn into_handler(self) -> Handler {
-        Box::new(self)
-    }
-}
 
 const ROUTER_RULES: (char, char) = ('/', ':');
 
@@ -102,10 +86,10 @@ impl Router {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::get;
+    use crate::{Result, get};
     use rusty_http::{HttpStatus, Request, Response};
 
-    async fn dummy_handler(_req: Request<'_>) -> Result<Response<'_>, HttpError> {
+    fn dummy_handler(_: Request) -> Result {
         Ok(Response::new(HttpStatus::Ok))
     }
 
