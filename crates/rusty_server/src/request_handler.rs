@@ -1,12 +1,15 @@
-use std::net::TcpStream;
+use std::io::Error;
 use std::str::Utf8Error;
 use std::sync::Arc;
-use std::{io::Read, net::SocketAddr};
+use std::{io::ErrorKind, net::SocketAddr};
 
-use rusty_http::{HttpError, HttpStatus, Request};
+use crate::ServerError;
+use rusty_http::{HttpError, HttpStatus, Request, Response};
 use rusty_router::{Handler, Router};
 use rusty_utils::PathMatch;
-use tracing::{debug, error, warn};
+use tokio::io::AsyncReadExt;
+use tokio::net::TcpStream;
+use tracing::{debug, warn};
 
 const BUFFER_SIZE: usize = 4096;
 
@@ -16,12 +19,12 @@ pub struct RequestHandler {
 }
 
 impl RequestHandler {
-    pub fn handle(&mut self) -> Result<(), HttpError> {
+    pub async fn handle(&mut self) -> Result<(), ServerError> {
         let peer_addr: Option<SocketAddr> = self.stream.peer_addr().ok();
         debug!("Processing connection from: {peer_addr:?}");
 
-        let mut buffer: [u8; 4096] = [0; BUFFER_SIZE]; // TODO: Dynamic Buffer & Keep-Alive
-        let bytes_read: usize = self.read_stream(&mut buffer)?;
+        let mut buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE]; // TODO: Dynamic Buffer
+        let bytes_read: usize = self.read_stream(&mut buffer).await?;
         let raw_bytes: &[u8] = &buffer[..bytes_read];
 
         let raw_request: &str = str::from_utf8(raw_bytes).map_err(|e: Utf8Error| {
@@ -39,22 +42,23 @@ impl RequestHandler {
         })?;
 
         request.set_params(route.params);
-        (route.value)(request)?.write_to_stream(&mut self.stream)?;
+        let response: Response = (route.value)(request).await?;
+        response.write_to_stream(&mut self.stream).await?;
 
         debug!("Request finished successfully");
         Ok(())
     }
 
-    fn read_stream(&mut self, buffer: &mut [u8]) -> Result<usize, HttpError> {
-        match self.stream.read(buffer) {
-            Ok(size) => Ok(size),
-            Err(e) => {
-                error!("Network I/O error: {e}");
-                Err(HttpError::new(
-                    HttpStatus::InternalServerError,
-                    "Failed to read data from connection",
-                ))
-            }
+    async fn read_stream(&mut self, buffer: &mut [u8]) -> Result<usize, ServerError> {
+        let bytes: usize = self.stream.read(buffer).await.map_err(|e: Error| match e.kind() {
+            ErrorKind::ConnectionReset | ErrorKind::BrokenPipe => ServerError::ConnectionClosed,
+            _ => HttpError::new(HttpStatus::InternalServerError, "Failed to read data from stream").into(),
+        })?;
+
+        if bytes == 0 {
+            return Err(ServerError::ConnectionClosed);
         }
+
+        Ok(bytes)
     }
 }

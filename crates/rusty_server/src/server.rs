@@ -1,11 +1,13 @@
 use std::io::Error;
-use std::net::{Ipv4Addr, SocketAddr, TcpListener};
+use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::Arc;
 
-use super::RequestHandler;
+use crate::{RequestHandler, ServerError};
 use rusty_http::Response;
 use rusty_router::Router;
-use rusty_utils::{ThreadPool, init_logger};
+use rusty_utils::init_logger;
+use tokio::net::{TcpListener, TcpStream};
+use tokio::runtime::{Builder, Runtime};
 use tracing::{debug, error, info, warn};
 
 pub struct ServerConfig {
@@ -15,8 +17,9 @@ pub struct ServerConfig {
 }
 
 pub struct Server {
-    config: ServerConfig,
+    runtime: Runtime,
     router: Arc<Router>,
+    address: SocketAddr,
     listener: TcpListener,
 }
 
@@ -25,21 +28,20 @@ impl Server {
         let address: SocketAddr = SocketAddr::from((config.host, config.port));
         debug!("Binding TCP listener to {address}");
 
-        let listener: TcpListener = TcpListener::bind(address)?;
+        let runtime: Runtime = Builder::new_multi_thread()
+            .worker_threads(config.pool_size)
+            .enable_all()
+            .build()?;
+
+        let listener: TcpListener = runtime.block_on(TcpListener::bind(address))?;
         let router: Arc<Router> = Arc::new(router);
 
         Ok(Self {
-            config,
             router,
+            runtime,
+            address,
             listener,
         })
-    }
-
-    pub fn address(&self) -> String {
-        self.listener
-            .local_addr()
-            .map(|a| a.to_string())
-            .unwrap_or_else(|_| "unknown".into())
     }
 
     pub fn with_default_logger(self) -> Self {
@@ -51,34 +53,41 @@ impl Server {
         self
     }
 
-    pub fn listen(&self) {
-        info!("Server running on http://{}", self.address());
-        let pool: ThreadPool = ThreadPool::new(self.config.pool_size);
+    pub fn listen(self) {
+        info!("Server running on http://{}", self.address);
 
-        for stream in self.listener.incoming() {
-            match stream {
-                Err(e) => {
-                    warn!("Connection attempt failed: {e}");
-                }
-                Ok(stream) => {
-                    let peer_addr: Option<SocketAddr> = stream.peer_addr().ok();
-                    let router: Arc<Router> = self.router.clone();
-                    debug!("Accepted connection from {peer_addr:?}");
+        self.runtime.block_on(async {
+            loop {
+                match self.listener.accept().await {
+                    Ok((stream, _address)) => {
+                        let router: Arc<Router> = self.router.clone();
 
-                    if let Err(e) = stream.set_nodelay(true) {
-                        warn!("Failed to set 'TCP_NODELAY': {e}");
-                    }
-
-                    pool.schedule(move || {
-                        let mut handler: RequestHandler = RequestHandler { router, stream };
-                        if let Err(e) = handler.handle() {
-                            error!("Failed to handle request from {peer_addr:?}: {e}");
-
-                            if let Err(e) = Response::new(e.status).write_to_stream(&mut handler.stream) {
-                                warn!("Failed to send error response to {peer_addr:?}: {e}");
-                            };
+                        if let Err(e) = stream.set_nodelay(true) {
+                            warn!("Failed to set 'TCP_NODELAY': {e}");
                         }
-                    });
+
+                        tokio::spawn(async move { Self::process_connection(stream, router).await });
+                    }
+                    Err(e) => {
+                        error!("Failed to accept connection: {e}");
+                    }
+                }
+            }
+        });
+    }
+
+    async fn process_connection(stream: TcpStream, router: Arc<Router>) {
+        let mut handler: RequestHandler = RequestHandler { router, stream };
+
+        loop {
+            if let Err(e) = handler.handle().await {
+                match e {
+                    ServerError::ConnectionClosed => break,
+                    ServerError::Http(e) => {
+                        if (Response::new(e.status).write_to_stream(&mut handler.stream).await).is_err() {
+                            break;
+                        }
+                    }
                 }
             }
         }
