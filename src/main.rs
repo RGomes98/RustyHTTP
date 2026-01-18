@@ -5,12 +5,6 @@ use rusty_http::{Headers, HttpError, HttpStatus, Params, Request, Response};
 use rusty_router::{Router, get, routes};
 use rusty_server::{Server, ServerConfig};
 
-async fn ping_handler(request: Request<'_>) -> Result<Response<'static>, HttpError> {
-    let headers: Headers = request.headers;
-    println!("Headers: {headers:#?}");
-    Ok(Response::new(HttpStatus::Ok).body("pong!"))
-}
-
 fn main() {
     let mut router: Router = Router::new();
 
@@ -35,4 +29,10 @@ fn main() {
         .expect("Failed to initialize server")
         .with_default_logger()
         .listen();
+}
+
+async fn ping_handler(request: Request<'_>) -> Result<Response<'static>, HttpError> {
+    let headers: Headers = request.headers;
+    println!("Headers: {headers:#?}");
+    Ok(Response::new(HttpStatus::Ok).body("pong!"))
 }
