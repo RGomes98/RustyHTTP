@@ -101,3 +101,98 @@ impl<'a> Request<'a> {
         Ok((path, version, method))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::HttpStatus;
+
+    #[test]
+    fn test_parse_valid_simple_request() {
+        let raw: &str = "GET /index.html HTTP/1.1\r\nHost: localhost\r\n\r\n";
+        let req: Request = Request::new(raw).expect("Should parse valid request");
+
+        assert_eq!(req.method, HttpMethod::GET);
+        assert_eq!(req.path, "/index.html");
+        assert_eq!(req.version, "HTTP/1.1");
+        assert_eq!(req.headers.get("host").map(|v| v.as_ref()), Some("localhost"));
+    }
+
+    #[test]
+    fn test_parse_headers_case_insensitivity() {
+        let raw: &str = "POST /submit HTTP/1.1\r\nCONTENT-TYPE: application/json\r\nX-Custom-Header: value\r\n\r\n";
+        let req: Request = Request::new(raw).expect("Should parse headers");
+
+        assert!(req.headers.contains_key("content-type"));
+        assert!(req.headers.contains_key("x-custom-header"));
+
+        match req
+            .headers
+            .keys()
+            .find(|k: &&Cow<str>| k.as_ref() == "content-type")
+            .unwrap()
+        {
+            Cow::Owned(_) => {}
+            _ => panic!("Expected Owned Cow for converted lowercase key"),
+        }
+    }
+
+    #[test]
+    fn test_parse_headers_trim_whitespace() {
+        let raw: &str = "GET / HTTP/1.1\r\nKey:    value with spaces    \r\n\r\n";
+        let req: Request = Request::new(raw).unwrap();
+
+        assert_eq!(req.headers.get("key").map(|v| v.as_ref()), Some("value with spaces"));
+    }
+
+    #[test]
+    fn test_request_empty_string() {
+        let raw: &str = "";
+        let result: Result<Request, HttpError> = Request::new(raw);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().status, HttpStatus::BadRequest);
+    }
+
+    #[test]
+    fn test_request_invalid_method() {
+        let raw: &str = "INVALIDMETHOD /path HTTP/1.1\r\n\r\n";
+        let result: Result<Request, HttpError> = Request::new(raw);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().status, HttpStatus::BadRequest);
+    }
+
+    #[test]
+    fn test_request_missing_version() {
+        let raw: &str = "GET /path\r\n\r\n";
+        let result: Result<Request, HttpError> = Request::new(raw);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().status, HttpStatus::BadRequest);
+    }
+
+    #[test]
+    fn test_header_missing_colon() {
+        let raw: &str = "GET / HTTP/1.1\r\nInvalidHeader\r\n\r\n";
+        let result: Result<Request, HttpError> = Request::new(raw);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().status, HttpStatus::BadRequest);
+    }
+
+    #[test]
+    fn test_set_params() {
+        let raw: &str = "GET /store/123 HTTP/1.1\r\n\r\n";
+        let mut req: Request = Request::new(raw).unwrap();
+
+        assert!(req.params.is_empty());
+
+        let new_params: Vec<(&str, &str)> = vec![("store_id", "123"), ("filter", "active")];
+        req.set_params(new_params);
+
+        assert_eq!(req.params.len(), 2);
+        assert_eq!(req.params.get("store_id"), Some(&"123"));
+        assert_eq!(req.params.get("filter"), Some(&"active"));
+    }
+}
