@@ -9,7 +9,6 @@ fn main() {
 
     let config: ListenerOptions = ListenerOptions {
         port: Config::from_env("PORT").unwrap_or(3000),
-        pool_size: Config::from_env("POOL_SIZE").unwrap_or(100),
         host: Config::from_env("HOST").unwrap_or_else(|_| Ipv4Addr::new(127, 0, 0, 1)),
     };
 

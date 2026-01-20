@@ -1,5 +1,6 @@
 use std::io::Error;
 use std::net::{Ipv4Addr, SocketAddr};
+use std::num::NonZero;
 use std::sync::Arc;
 
 use super::{Connection, ListenerError};
@@ -13,7 +14,6 @@ use tracing::{debug, error, info, warn};
 pub struct ListenerOptions {
     pub port: u16,
     pub host: Ipv4Addr,
-    pub pool_size: usize,
 }
 
 pub struct Listener {
@@ -28,8 +28,12 @@ impl Listener {
         let address: SocketAddr = SocketAddr::from((config.host, config.port));
         debug!("Binding TCP listener to {address}");
 
+        let cpu: usize = std::thread::available_parallelism()
+            .map(|n: NonZero<usize>| n.get())
+            .unwrap_or(8);
+
         let runtime: Runtime = Builder::new_multi_thread()
-            .worker_threads(config.pool_size)
+            .worker_threads(cpu * 12)
             .enable_all()
             .build()?;
 
