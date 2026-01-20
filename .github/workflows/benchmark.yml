@@ -47,7 +47,7 @@ jobs:
         run: cargo clippy -- -D warnings
 
       - name: Run Tests
-        run: cargo test --verbose
+        run: cargo test --all --verbose
 
   benchmark:
     runs-on: ubuntu-latest
