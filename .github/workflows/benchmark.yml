@@ -36,7 +36,7 @@ jobs:
 
       - name: Start Server
         run: |
-          nohup ./target/release/rusty_http_server &
+          nohup ./target/release/forge-example &
           echo $! > server_pid.txt
           sleep 5
 

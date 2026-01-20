@@ -1,14 +1,11 @@
 [package]
-name = "rusty_http_server"
+name = "forge-example"
 version = "0.1.0"
 edition = "2024"
 
 [workspace]
 resolver = "3"
-members = ["crates/*"]
+members = ["crates/forge"]
 
 [dependencies]
-rusty_config = { path = "crates/rusty_config" }
-rusty_http   = { path = "crates/rusty_http" }
-rusty_router = { path = "crates/rusty_router" }
-rusty_server = { path = "crates/rusty_server" }
+forge = { path = "crates/forge" }

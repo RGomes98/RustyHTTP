@@ -46,6 +46,78 @@ dependencies = [
 ]
 
 [[package]]
+name = "forge"
+version = "0.1.0"
+dependencies = [
+ "forge-config",
+ "forge-http",
+ "forge-router",
+ "forge-server",
+]
+
+[[package]]
+name = "forge-config"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "thiserror",
+ "toml",
+ "tracing",
+]
+
+[[package]]
+name = "forge-example"
+version = "0.1.0"
+dependencies = [
+ "forge",
+]
+
+[[package]]
+name = "forge-http"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "forge-logging"
+version = "0.1.0"
+dependencies = [
+ "forge-config",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "forge-router"
+version = "0.1.0"
+dependencies = [
+ "forge-http",
+ "forge-utils",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
+name = "forge-server"
+version = "0.1.0"
+dependencies = [
+ "forge-http",
+ "forge-logging",
+ "forge-router",
+ "forge-utils",
+ "thiserror",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "forge-utils"
+version = "0.1.0"
+
+[[package]]
 name = "hashbrown"
 version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -201,66 +273,6 @@ name = "regex-syntax"
 version = "0.8.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
-
-[[package]]
-name = "rusty_config"
-version = "0.1.0"
-dependencies = [
- "serde",
- "thiserror",
- "toml",
- "tracing",
-]
-
-[[package]]
-name = "rusty_http"
-version = "0.1.0"
-dependencies = [
- "thiserror",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "rusty_http_server"
-version = "0.1.0"
-dependencies = [
- "rusty_config",
- "rusty_http",
- "rusty_router",
- "rusty_server",
-]
-
-[[package]]
-name = "rusty_router"
-version = "0.1.0"
-dependencies = [
- "rusty_http",
- "rusty_utils",
- "thiserror",
- "tracing",
-]
-
-[[package]]
-name = "rusty_server"
-version = "0.1.0"
-dependencies = [
- "rusty_http",
- "rusty_router",
- "rusty_utils",
- "thiserror",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "rusty_utils"
-version = "0.1.0"
-dependencies = [
- "rusty_config",
- "tracing",
- "tracing-subscriber",
-]
 
 [[package]]
 name = "scopeguard"

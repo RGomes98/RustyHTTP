@@ -1,0 +1,10 @@
+[package]
+name = "forge"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+forge-http = { path = "../forge-http" }
+forge-router = { path = "../forge-router" }
+forge-server = { path = "../forge-server" }
+forge-config = { path = "../forge-config" }
