@@ -88,7 +88,6 @@ mod tests {
     use super::*;
     use crate::get;
     use forge_http::{HttpError, HttpStatus, Request, Response};
-    use forge_utils::PathMatch;
 
     fn dummy_handler(_: Request) -> Result<Response, HttpError> {
         Ok(Response::new(HttpStatus::Ok))
