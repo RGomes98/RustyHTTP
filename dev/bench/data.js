@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768887752731,
+  "lastUpdate": 1768889398794,
   "repoUrl": "https://github.com/RGomes98/Forge",
   "entries": {
     "Benchmark": [
@@ -115,6 +115,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "API Throughput",
             "value": 148406.34,
+            "unit": "req/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "renango2015@gmail.com",
+            "name": "Renan Gomes",
+            "username": "RGomes98"
+          },
+          "committer": {
+            "email": "renango2015@gmail.com",
+            "name": "Renan Gomes",
+            "username": "RGomes98"
+          },
+          "distinct": true,
+          "id": "12681d0ddbb39af89b631eeda966f4299ad8dd46",
+          "message": "build(workflow): fix conditional job in merged commits",
+          "timestamp": "2026-01-20T03:09:13-03:00",
+          "tree_id": "7d3f8262514689ea3c3f1997ac4b7c86a41f8b12",
+          "url": "https://github.com/RGomes98/Forge/commit/12681d0ddbb39af89b631eeda966f4299ad8dd46"
+        },
+        "date": 1768889397916,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "API Throughput",
+            "value": 241462.25,
             "unit": "req/s"
           }
         ]
