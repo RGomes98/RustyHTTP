@@ -1,16 +1,14 @@
 use std::{net::Ipv4Addr, thread::sleep, time::Duration};
 
-use rusty_config::Config;
-use rusty_http::{Headers, HttpStatus, Params, Request, Response};
-use rusty_router::{Result, Router, get, routes};
-use rusty_server::{Server, ServerConfig};
+use forge::prelude::{
+    Config, Headers, HttpError, HttpStatus, Listener, ListenerOptions, Params, Request, Response, Router, get, routes,
+};
 
 fn main() {
     let mut router: Router = Router::new();
 
-    let config: ServerConfig = ServerConfig {
+    let config: ListenerOptions = ListenerOptions {
         port: Config::from_env("PORT").unwrap_or(3000),
-        pool_size: Config::from_env("POOL_SIZE").unwrap_or(100),
         host: Config::from_env("HOST").unwrap_or_else(|_| Ipv4Addr::new(127, 0, 0, 1)),
     };
 
@@ -26,13 +24,13 @@ fn main() {
         Ok(Response::new(HttpStatus::Ok))
     });
 
-    Server::new(router, config)
+    Listener::new(router, config)
         .expect("Failed to initialize server")
         .with_default_logger()
-        .listen();
+        .run();
 }
 
-fn ping_handler(request: Request) -> Result {
+fn ping_handler(request: Request) -> Result<Response, HttpError> {
     let headers: Headers = request.headers;
     println!("Headers: {headers:#?}");
     Ok(Response::new(HttpStatus::Ok).body("pong!"))
