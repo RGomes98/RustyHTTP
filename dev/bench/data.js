@@ -1,6 +1,6 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768753079434,
-  "repoUrl": "https://github.com/RGomes98/RustyHTTP",
+  "lastUpdate": 1768887752731,
+  "repoUrl": "https://github.com/RGomes98/Forge",
   "entries": {
     "Benchmark": [
       {
@@ -86,6 +86,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "API Throughput",
             "value": 154741.12,
+            "unit": "req/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "54034976+RGomes98@users.noreply.github.com",
+            "name": "Renan Tavares",
+            "username": "RGomes98"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5e2c0db856192378f43661c368946fbd9dbcf115",
+          "message": "Merge pull request #4 from RGomes98/refactor-file-structure\n\nFile structure refactor",
+          "timestamp": "2026-01-20T02:41:19-03:00",
+          "tree_id": "e4dc3033bce900960f9a58cf28f0f4b577e4466e",
+          "url": "https://github.com/RGomes98/Forge/commit/5e2c0db856192378f43661c368946fbd9dbcf115"
+        },
+        "date": 1768887751939,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "API Throughput",
+            "value": 148406.34,
             "unit": "req/s"
           }
         ]
