@@ -104,7 +104,6 @@ impl<'a> Request<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::HttpStatus;
 
     #[test]
     fn test_parse_valid_simple_request() {
