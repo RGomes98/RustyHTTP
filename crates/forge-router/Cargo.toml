@@ -1,0 +1,11 @@
+[package]
+name = "forge-router"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+forge-http = { path = "../forge-http" }
+forge-utils = { path = "../forge-utils" }
+
+thiserror = "2.0.17"
+tracing = { version = "=0.1.44"}
