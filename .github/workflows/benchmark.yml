@@ -38,11 +38,9 @@ jobs:
         run: |
           nohup ./target/release/forge-example &
           echo $! > server_pid.txt
-          sleep 5
 
       - name: Run Benchmark
         run: |
-          # Prevent "Too many open files" error
           ulimit -n 65535
 
           URL="http://127.0.0.1:3000/health"
