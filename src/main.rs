@@ -1,10 +1,10 @@
-use std::{net::Ipv4Addr, thread::sleep, time::Duration};
+use std::{net::Ipv4Addr, time::Duration};
 
-use forge::prelude::{
-    Config, Headers, HttpError, HttpStatus, Listener, ListenerOptions, Params, Request, Response, Router, get, routes,
-};
+use forge::prelude::*;
+use tokio::time::sleep;
 
-fn main() {
+#[forge::prelude::main]
+async fn main() {
     let mut router: Router = Router::new();
 
     let config: ListenerOptions = ListenerOptions {
@@ -24,10 +24,9 @@ fn main() {
         Ok(Response::new(HttpStatus::Ok))
     });
 
-    Listener::new(router, config)
-        .expect("Failed to initialize server")
-        .with_default_logger()
-        .run();
+    if let Err(e) = Listener::new(router, config).with_default_logger().run().await {
+        eprintln!("Failed to initialize server {e}")
+    };
 }
 
 fn ping_handler(request: Request) -> Result<Response, HttpError> {
@@ -37,6 +36,6 @@ fn ping_handler(request: Request) -> Result<Response, HttpError> {
 }
 
 async fn get_user() -> &'static str {
-    sleep(Duration::from_secs(5));
+    sleep(Duration::from_secs(5)).await;
     "John Doe"
 }

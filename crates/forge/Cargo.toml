@@ -8,3 +8,4 @@ forge-http = { path = "../forge-http" }
 forge-router = { path = "../forge-router" }
 forge-server = { path = "../forge-server" }
 forge-config = { path = "../forge-config" }
+forge-macros = { path = "../forge-macros" }
