@@ -36,6 +36,6 @@ fn ping_handler(request: Request) -> Result<Response, HttpError> {
 }
 
 async fn get_user() -> &'static str {
-    sleep(Duration::from_secs(5));
+    sleep(Duration::from_secs(5)).await;
     "John Doe"
 }
