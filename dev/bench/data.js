@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768889398794,
+  "lastUpdate": 1769085072867,
   "repoUrl": "https://github.com/RGomes98/Forge",
   "entries": {
     "Benchmark": [
@@ -144,6 +144,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "API Throughput",
             "value": 241462.25,
+            "unit": "req/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "54034976+RGomes98@users.noreply.github.com",
+            "name": "Renan Tavares",
+            "username": "RGomes98"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f54c22b6f7ddbc5976822d73d8380f2440c2719c",
+          "message": "Merge pull request #6 from RGomes98/feat-tokio-main\n\nAdd async main",
+          "timestamp": "2026-01-22T09:30:02-03:00",
+          "tree_id": "c5c82ba4d679a0aa485cfa9167eb0262940ba1b6",
+          "url": "https://github.com/RGomes98/Forge/commit/f54c22b6f7ddbc5976822d73d8380f2440c2719c"
+        },
+        "date": 1769085071999,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "API Throughput",
+            "value": 152210.7,
             "unit": "req/s"
           }
         ]
