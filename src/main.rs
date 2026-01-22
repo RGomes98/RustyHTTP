@@ -3,8 +3,7 @@ use std::{net::Ipv4Addr, time::Duration};
 use forge::prelude::*;
 use tokio::time::sleep;
 
-#[tokio::main]
-
+#[forge::prelude::main]
 async fn main() {
     let mut router: Router = Router::new();
 
@@ -37,6 +36,6 @@ fn ping_handler(request: Request) -> Result<Response, HttpError> {
 }
 
 async fn get_user() -> &'static str {
-    sleep(Duration::from_secs(5)).await;
+    sleep(Duration::from_secs(5));
     "John Doe"
 }
