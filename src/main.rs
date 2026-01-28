@@ -1,6 +1,7 @@
 use std::{net::Ipv4Addr, time::Duration};
 
 use forge::prelude::*;
+use serde_json::{Value, json};
 use tokio::time::sleep;
 
 #[forge::prelude::main]
@@ -15,7 +16,9 @@ async fn main() {
     routes!(router, {
         get "/ping" => ping_handler,
         get "/health" => |_| { Ok(Response::new(HttpStatus::Ok).body("OK")) },
-        get "/john_doe" => async |_| { Ok(Response::new(HttpStatus::Ok).body(get_user().await)) },
+        get "/john_doe" => async |_| {
+            Response::new(HttpStatus::Ok).json(get_user().await)
+         },
     });
 
     get!(router, "/store/:store_id/customer/:customer_id", |request: Request| {
@@ -35,7 +38,7 @@ fn ping_handler(request: Request) -> Result<Response, HttpError> {
     Ok(Response::new(HttpStatus::Ok).body("pong!"))
 }
 
-async fn get_user() -> &'static str {
+async fn get_user() -> Value {
     sleep(Duration::from_secs(5)).await;
-    "John Doe"
+    json!({ "name": "John Doe", "age": 18 })
 }

@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use super::{HttpError, HttpStatus};
+use serde::Serialize;
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 use tracing::debug;
 
@@ -23,6 +24,17 @@ impl<'a> Response<'a> {
     {
         self.body_content.replace(body.into());
         self
+    }
+
+    pub fn json<T>(mut self, body: T) -> Result<Self, HttpError>
+    where
+        T: Serialize,
+    {
+        let json: String = serde_json::to_string(&body)
+            .map_err(|_| HttpError::new(HttpStatus::InternalServerError, "Failed to serialize response to JSON"))?;
+
+        self.body_content.replace(json.into());
+        Ok(self)
     }
 
     pub async fn send(self, stream: &mut TcpStream) -> Result<(), HttpError> {
