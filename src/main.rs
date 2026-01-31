@@ -30,7 +30,7 @@ async fn main() {
     };
 }
 
-async fn user_handler(_: Request<'_>) -> Response<'static> {
+async fn user_handler(_: Request<'_>) -> Response<'_> {
     sleep(Duration::from_secs(5)).await;
     let user: serde_json::Value = json!({ "name": "John Doe", "age": 18 });
     Response::new(HttpStatus::Ok).json(user)
