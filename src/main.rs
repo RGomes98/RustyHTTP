@@ -1,6 +1,7 @@
 use std::{net::Ipv4Addr, time::Duration};
 
 use forge::prelude::*;
+use serde_json::json;
 use tokio::time::sleep;
 
 #[forge::prelude::main]
@@ -13,15 +14,15 @@ async fn main() {
     };
 
     routes!(router, {
+        get "/user" => user_handler,
         get "/ping" => ping_handler,
-        get "/health" => |_| { Ok(Response::new(HttpStatus::Ok).body("OK")) },
-        get "/john_doe" => async |_| { Ok(Response::new(HttpStatus::Ok).body(get_user().await)) },
+        get "/health" => health_handler,
     });
 
-    get!(router, "/store/:store_id/customer/:customer_id", |request: Request| {
-        let params: Params = request.params;
+    get!(router, "/store/:store_id/customer/:customer_id", |req: Request| {
+        let params: Params = req.params;
         println!("Params: {params:#?}");
-        Ok(Response::new(HttpStatus::Ok))
+        Response::new(HttpStatus::Ok)
     });
 
     if let Err(e) = Listener::new(router, config).with_default_logger().run().await {
@@ -29,13 +30,18 @@ async fn main() {
     };
 }
 
-fn ping_handler(request: Request) -> Result<Response, HttpError> {
-    let headers: Headers = request.headers;
-    println!("Headers: {headers:#?}");
-    Ok(Response::new(HttpStatus::Ok).body("pong!"))
+async fn user_handler(_: Request<'_>) -> Response<'static> {
+    sleep(Duration::from_secs(5)).await;
+    let user: serde_json::Value = json!({ "name": "John Doe", "age": 18 });
+    Response::new(HttpStatus::Ok).json(user)
 }
 
-async fn get_user() -> &'static str {
-    sleep(Duration::from_secs(5)).await;
-    "John Doe"
+fn ping_handler(req: Request) -> Response {
+    let headers: Headers = req.headers;
+    println!("Headers: {headers:#?}");
+    Response::new(HttpStatus::Ok).body("pong!")
+}
+
+fn health_handler(_: Request) -> Response {
+    Response::new(HttpStatus::Ok).body("OK")
 }
