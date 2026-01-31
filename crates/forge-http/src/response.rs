@@ -108,7 +108,7 @@ mod tests {
         let response: Response = Response::new(HttpStatus::Ok).json(&user);
 
         assert_eq!(response.status, HttpStatus::Ok);
-        assert_eq!(response.body_content.unwrap(), r#"{"name":"John Doe","age":18}"#);
+        assert_eq!(response.body_content.unwrap(), r#"{"age":18,"name":"John Doe"}"#);
     }
 
     #[test]
