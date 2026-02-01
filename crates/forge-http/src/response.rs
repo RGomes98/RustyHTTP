@@ -48,13 +48,17 @@ impl<'a> Response<'a> {
         self.header("Content-Type", "text/plain").body(text)
     }
 
-    pub fn json<T>(self, body: T) -> Self
+    pub fn json<T>(mut self, body: T) -> Self
     where
         T: Serialize,
     {
         match serde_json::to_string(&body) {
-            Ok(v) => self.body(v),
-            Err(e) => Response::new(HttpStatus::InternalServerError).body(format!("JSON Serialization Failed: {e}")),
+            Ok(v) => self.header("Content-Type", "application/json").body(v),
+            Err(e) => {
+                self.status = HttpStatus::InternalServerError;
+                self.body.replace(format!("JSON Serialization Failed: {e}").into());
+                self
+            }
         }
     }
 
