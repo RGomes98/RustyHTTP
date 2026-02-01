@@ -1,12 +1,12 @@
 use std::{
     borrow::Cow,
-    io::{Cursor, Write},
+    io::{Cursor, IoSlice, Write},
 };
 
 use super::{HttpError, HttpStatus};
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 
-const BUFFER_SIZE: usize = 8192;
+const BUFFER_SIZE: usize = 1024;
 
 pub struct Response<'a> {
     status: HttpStatus,
@@ -69,19 +69,20 @@ impl<'a> Response<'a> {
     }
 
     pub async fn send(&self, stream: &mut TcpStream) -> Result<(), HttpError> {
-        let mut buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
-        let bytes_written: usize = self.write_head_to_buffer(&mut buffer)?;
-
-        stream
-            .write_all(&buffer[..bytes_written])
-            .await
-            .map_err(|_| HttpError::new(HttpStatus::InternalServerError, "Failed to write response headers"))?;
+        let mut head_buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
+        let head_length: usize = self.write_head_to_buffer(&mut head_buffer)?;
+        let head_slice: &[u8] = &head_buffer[..head_length];
 
         if let Some(body) = &self.body {
             stream
-                .write_all(body.as_bytes())
+                .write_vectored(&[IoSlice::new(head_slice), IoSlice::new(body.as_bytes())])
                 .await
-                .map_err(|_| HttpError::new(HttpStatus::InternalServerError, "Failed to write response body"))?;
+                .map_err(|_| HttpError::new(HttpStatus::InternalServerError, "Failed to write vectored response"))?;
+        } else {
+            stream
+                .write_all(head_slice)
+                .await
+                .map_err(|_| HttpError::new(HttpStatus::InternalServerError, "Failed to write response headers"))?;
         }
 
         stream
