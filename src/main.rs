@@ -14,8 +14,8 @@ async fn main() {
 
     routes!(router, {
         get "/ping" => ping_handler,
-        get "/health" => |_| { Ok(Response::new(HttpStatus::Ok).body("OK")) },
-        get "/john_doe" => async |_| { Ok(Response::new(HttpStatus::Ok).body(get_user().await)) },
+        get "/health" => |_| { Ok(Response::new(HttpStatus::Ok).text("OK")) },
+        get "/john_doe" => async |_| { Ok(Response::new(HttpStatus::Ok).text(get_user().await)) },
     });
 
     get!(router, "/store/:store_id/customer/:customer_id", |request: Request| {
@@ -32,7 +32,7 @@ async fn main() {
 fn ping_handler(request: Request) -> Result<Response, HttpError> {
     let headers: Headers = request.headers;
     println!("Headers: {headers:#?}");
-    Ok(Response::new(HttpStatus::Ok).body("pong!"))
+    Ok(Response::new(HttpStatus::Ok).text("pong!"))
 }
 
 async fn get_user() -> &'static str {
