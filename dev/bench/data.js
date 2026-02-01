@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769085072867,
+  "lastUpdate": 1769947101805,
   "repoUrl": "https://github.com/RGomes98/Forge",
   "entries": {
     "Benchmark": [
@@ -173,6 +173,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "API Throughput",
             "value": 152210.7,
+            "unit": "req/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "54034976+RGomes98@users.noreply.github.com",
+            "name": "Renan Tavares",
+            "username": "RGomes98"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "97ccd3dfbe685a382d4f51c50bbe118f98aa00d5",
+          "message": "Merge pull request #19 from RGomes98/feature/response-headers\n\nAdd Response Headers Support",
+          "timestamp": "2026-02-01T08:57:12-03:00",
+          "tree_id": "b6e60af85fc07c8339f15fd574f7c0e9c55ddc7a",
+          "url": "https://github.com/RGomes98/Forge/commit/97ccd3dfbe685a382d4f51c50bbe118f98aa00d5"
+        },
+        "date": 1769947101415,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "API Throughput",
+            "value": 141518.25,
             "unit": "req/s"
           }
         ]
