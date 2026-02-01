@@ -35,11 +35,11 @@ async fn user_handler(_: Request<'_>) -> Response<'_> {
 fn ping_handler(req: Request) -> Response {
     let headers: Headers = req.headers;
     println!("Headers: {headers:#?}");
-    Response::new(HttpStatus::Ok).body("pong!")
+    Response::new(HttpStatus::Ok).text("pong!")
 }
 
 fn health_handler(_: Request) -> Response {
-    Response::new(HttpStatus::Ok).body("OK")
+    Response::new(HttpStatus::Ok).text("OK")
 }
 
 fn store_handler(req: Request) -> Response {
