@@ -19,11 +19,7 @@ async fn main() {
         get "/health" => health_handler,
     });
 
-    get!(router, "/store/:store_id/customer/:customer_id", |req: Request| {
-        let params: Params = req.params;
-        println!("Params: {params:#?}");
-        Response::new(HttpStatus::Ok)
-    });
+    get!(router, "/store/:store_id/customer/:customer_id", store_handler);
 
     if let Err(e) = Listener::new(router, config).with_default_logger().run().await {
         eprintln!("Failed to initialize server {e}")
@@ -32,7 +28,7 @@ async fn main() {
 
 async fn user_handler(_: Request<'_>) -> Response<'_> {
     sleep(Duration::from_secs(5)).await;
-    let user: serde_json::Value = json!({ "name": "John Doe", "age": 18 });
+    let user: serde_json::Value = json!({ "name": "john doe", "age": 18 });
     Response::new(HttpStatus::Ok).json(user)
 }
 
@@ -44,4 +40,20 @@ fn ping_handler(req: Request) -> Response {
 
 fn health_handler(_: Request) -> Response {
     Response::new(HttpStatus::Ok).body("OK")
+}
+
+fn store_handler(req: Request) -> Response {
+    let Some(id_str) = req.params.get("store_id") else {
+        return HttpError::new(HttpStatus::BadRequest, "missing parameter \"store_id\"").into();
+    };
+
+    let Ok(store_id) = id_str.parse::<i32>() else {
+        return HttpError::new(HttpStatus::BadRequest, "parameter \"store_id\" must be a valid integer").into();
+    };
+
+    if store_id < 1 {
+        return HttpError::new(HttpStatus::BadRequest, "parameter \"store_id\" must be greater than 0").into();
+    }
+
+    Response::new(HttpStatus::Ok).json(req.params)
 }
