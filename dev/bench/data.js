@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769947101805,
+  "lastUpdate": 1769948337190,
   "repoUrl": "https://github.com/RGomes98/Forge",
   "entries": {
     "Benchmark": [
@@ -202,6 +202,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "API Throughput",
             "value": 141518.25,
+            "unit": "req/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "54034976+RGomes98@users.noreply.github.com",
+            "name": "Renan Tavares",
+            "username": "RGomes98"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "190884f7e58c7dc64c2df13570f7689a2401d4e4",
+          "message": "Merge pull request #16 from RGomes98/feature-json-helper\n\nJSON Response Helper",
+          "timestamp": "2026-02-01T09:17:42-03:00",
+          "tree_id": "e564efe3039fad671efe60f2d8a8a37d40d216bb",
+          "url": "https://github.com/RGomes98/Forge/commit/190884f7e58c7dc64c2df13570f7689a2401d4e4"
+        },
+        "date": 1769948336442,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "API Throughput",
+            "value": 138362.49,
             "unit": "req/s"
           }
         ]
